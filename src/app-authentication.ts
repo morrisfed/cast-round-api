@@ -2,7 +2,7 @@ import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as T from "fp-ts/lib/Task";
 
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import passport from "passport";
 import OAuth2Strategy, {
   VerifyFunction as Oauth2VerifyFunction,
@@ -11,8 +11,13 @@ import OAuth2Strategy, {
 import UniqueTokenStrategy from "passport-unique-token";
 import { VerifyFunction as UniqueTokenVerifyFunction } from "passport-unique-token/dist/strategy";
 
+import { URLSearchParams } from "url";
+
 import env from "./utils/env";
-import getMwUser from "./membership-works";
+import getMwUser, {
+  isMwProfileParseError,
+  isMwUnrecognisedMembershipType,
+} from "./membership-works";
 import { MembershipWorksUser } from "./interfaces/User";
 
 const mwUserToUser = (mwUser: MembershipWorksUser): Express.User => ({
@@ -31,6 +36,11 @@ const mwVerifyFunction: Oauth2VerifyFunction = async (
   const getUserTask = pipe(
     getMwUser(accessToken),
     TE.map(mwUserToUser),
+    TE.mapLeft((e) =>
+      isMwProfileParseError(e)
+        ? new Error("mw-profile-parse-error", { cause: e })
+        : e
+    ),
     TE.fold(
       (e) => T.of(verified(e)),
       (user) => T.of(verified(null, user))
@@ -95,10 +105,30 @@ const authRoute = express.Router();
 authRoute.get("/api/auth/mw", passport.authenticate("oauth2"));
 authRoute.get(
   "/api/auth/mw/callback",
-  passport.authenticate("oauth2", { failureRedirect: "/login" }),
-  (_req, res) => {
-    // Successful authentication, redirect home.
+  passport.authenticate("oauth2", {
+    failureRedirect: "/foo",
+    failureMessage: "Login failed",
+    successRedirect: "/",
+  }),
+  (_req: Request, res: Response) => {
     res.redirect("/");
+  },
+  (err: any, req: Request, res: Response, next: NextFunction) => {
+    const cause = err?.cause;
+    if (isMwProfileParseError(cause)) {
+      const parseErrorCause = cause.cause;
+      if (isMwUnrecognisedMembershipType(parseErrorCause)) {
+        const msg = `Unrecognised membership type ID ${parseErrorCause.deckId} for member ${cause.name} with account ID ${cause.accountId}.`;
+        const searchParams = new URLSearchParams();
+        searchParams.append("error", "login-failed");
+        searchParams.append("errorMessage", msg);
+        res.redirect(`/?${searchParams.toString()}`);
+      } else {
+        res.redirect("/?error=login-failed");
+      }
+    } else {
+      next(err);
+    }
   }
 );
 authRoute.get("/api/auth/delegate", passport.authenticate("token"));

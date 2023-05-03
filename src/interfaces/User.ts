@@ -1,8 +1,12 @@
 export type MembershipWorksUserType =
-  | "individual-member"
-  | "group-member"
-  | "committee-member"
-  | "other-member";
+  | "associate-membership"
+  | "committee"
+  | "friend"
+  | "group-membership"
+  | "honorary"
+  | "individual-membership"
+  | "junior-membership"
+  | "overseas-membership";
 
 export type UserType =
   | MembershipWorksUserType
@@ -14,6 +18,14 @@ export interface MembershipWorksUser {
   name: string;
   contact_name: string;
   type: MembershipWorksUserType;
+}
+
+export interface User {
+  id: string;
+  enabled: boolean;
+  name: string;
+  contactName: string | null;
+  type: UserType;
 }
 
 // Add our custom user type to the Express namespace

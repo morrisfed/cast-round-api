@@ -2,6 +2,8 @@ import express from "express";
 
 import ProfileResponse from "../interfaces/ProfileResponse";
 
+import adminRouter from "./admin";
+
 const router = express.Router();
 
 router.get<{}, ProfileResponse>("/profile", (req, res) => {
@@ -13,5 +15,7 @@ router.get<{}, ProfileResponse>("/profile", (req, res) => {
     res.sendStatus(401);
   }
 });
+
+router.use("/admin", adminRouter);
 
 export default router;

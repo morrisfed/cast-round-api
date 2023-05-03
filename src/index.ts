@@ -1,7 +1,16 @@
 import app from "./app";
+import User from "./model/db/user";
 import logger from "./utils/logging";
 
-const port = process.env.PORT || 5000;
-app.listen(port, () => {
-  logger.info(`Listening: http://localhost:${port}`);
-});
+const main = async () => {
+  logger.info("Initialising database. Creating/altering tables...");
+  await User.sync({ alter: true });
+
+  logger.info("Starting app server...");
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => {
+    logger.info("App server listening for connections.");
+  });
+};
+
+main();
