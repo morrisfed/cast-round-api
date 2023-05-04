@@ -5,7 +5,11 @@ import * as E from "fp-ts/lib/Either";
 import * as TE from "fp-ts/lib/TaskEither";
 import { pipe } from "fp-ts/lib/function";
 import { sequenceS } from "fp-ts/lib/Apply";
-import { MembershipWorksUserType, User } from "../interfaces/User";
+
+import {
+  MembershipWorksUserProfile,
+  MembershipWorksUserType,
+} from "./MembershipWorksTypes";
 
 interface MemberCsvRow {
   "Account Name": string;
@@ -62,21 +66,14 @@ const memberRowToFieldValue =
     return E.right(value);
   };
 
-const getIdForMembershipWorksUser = (
+const memberRowToUser = (
   row: MemberCsvRow
-): E.Either<Error, string> =>
-  pipe(
-    memberRowToFieldValue("Account ID")(true)(row),
-    E.map((id) => `mw-${id}`)
-  );
-
-const memberRowToUser = (row: MemberCsvRow): E.Either<Error, User> =>
+): E.Either<Error, MembershipWorksUserProfile> =>
   pipe(
     sequenceS(E.Apply)({
-      id: getIdForMembershipWorksUser(row),
-      enabled: E.right(true),
+      account_id: memberRowToFieldValue("Account ID")(true)(row),
       name: memberRowToFieldValue("Account Name")(true)(row),
-      contactName: memberRowToFieldValue("Contact Name")(false)(row),
+      contact_name: memberRowToFieldValue("Contact Name")(false)(row),
       type: memberRowToUserType(row),
     })
   );
@@ -89,12 +86,12 @@ const bufferToMembersCsv = (
     (err) => new Error(`Failed to parse CSV: ${err}`)
   );
 
-const bufferToUsers = (buffer: Buffer): TE.TaskEither<Error, readonly User[]> =>
+export const bufferToMwUserProfiles = (
+  buffer: Buffer
+): TE.TaskEither<Error, readonly MembershipWorksUserProfile[]> =>
   pipe(
     bufferToMembersCsv(buffer),
     TE.flatMap((rows) =>
       TE.traverseArray(TE.fromEitherK(memberRowToUser))(rows)
     )
   );
-
-export default bufferToUsers;

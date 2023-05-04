@@ -1,5 +1,5 @@
 import app from "./app";
-import User from "./model/db/user";
+import User from "./model/db/UserInfo";
 import logger from "./utils/logging";
 
 const main = async () => {

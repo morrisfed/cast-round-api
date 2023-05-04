@@ -3,8 +3,8 @@ import * as RA from "fp-ts/lib/ReadonlyArray";
 import { pipe } from "fp-ts/lib/function";
 import { Monoid } from "fp-ts/lib/Monoid";
 import { Transaction } from "sequelize";
-import { User } from "../interfaces/User";
-import { createUser, updateUser } from "../model/user";
+import { UserInfo } from "../interfaces/UserInfo";
+import { createUserInfo, updateUserInfo } from "../model/userInfo";
 import transactionalTaskEither from "../model/transaction";
 
 interface ImportResult {
@@ -26,22 +26,22 @@ const monoidImportResult: Monoid<ImportResult> = {
 
 const processImportedUserAsUpdate =
   (t: Transaction) =>
-  (importedUser: User): TE.TaskEither<Error | "not-found", ImportResult> =>
+  (importedUser: UserInfo): TE.TaskEither<Error | "not-found", ImportResult> =>
     pipe(
-      updateUser(t)(importedUser.id, importedUser),
+      updateUserInfo(t)(importedUser.id, importedUser),
       TE.map(() => ({ created: 0, updated: 1, error: 0, errorMessage: [] }))
     );
 
 const processImportedUserAsCreate = (
-  importedUser: User
+  importedUser: UserInfo
 ): TE.TaskEither<Error, ImportResult> =>
   pipe(
-    createUser(importedUser),
+    createUserInfo(importedUser),
     TE.map(() => ({ created: 1, updated: 0, error: 0, errorMessage: [] }))
   );
 
 const createUserIfNotFound =
-  (importedUser: User) => (err: Error | "not-found") => {
+  (importedUser: UserInfo) => (err: Error | "not-found") => {
     if (err === "not-found") {
       return processImportedUserAsCreate(importedUser);
     }
@@ -50,14 +50,14 @@ const createUserIfNotFound =
 
 const importUser =
   (t: Transaction) =>
-  (importedUser: User): TE.TaskEither<Error, ImportResult> =>
+  (importedUser: UserInfo): TE.TaskEither<Error, ImportResult> =>
     pipe(
       processImportedUserAsUpdate(t)(importedUser),
       TE.orElse(createUserIfNotFound(importedUser))
     );
 
-const importUsers = (
-  importedUsers: readonly User[]
+export const importUsers = (
+  importedUsers: readonly UserInfo[]
 ): TE.TaskEither<Error, ImportResult> =>
   transactionalTaskEither((t) =>
     pipe(
@@ -67,5 +67,3 @@ const importUsers = (
       TE.map(RA.foldMap(monoidImportResult)((x) => x))
     )
   );
-
-export default importUsers;

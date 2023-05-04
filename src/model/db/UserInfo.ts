@@ -6,14 +6,14 @@ import {
   Model,
   Sequelize,
 } from "sequelize";
-import { User, UserType } from "../../interfaces/User";
+import { UserInfo, UserType } from "../../interfaces/UserInfo";
 
-class PersistedUser
+class PersistedUserInfo
   extends Model<
-    InferAttributes<PersistedUser>,
-    InferCreationAttributes<PersistedUser>
+    InferAttributes<PersistedUserInfo>,
+    InferCreationAttributes<PersistedUserInfo>
   >
-  implements User
+  implements UserInfo
 {
   declare id: string;
 
@@ -31,7 +31,7 @@ class PersistedUser
 }
 
 export const init = (sequelize: Sequelize) =>
-  PersistedUser.init(
+  PersistedUserInfo.init(
     {
       id: {
         type: DataTypes.STRING,
@@ -57,8 +57,8 @@ export const init = (sequelize: Sequelize) =>
     },
     {
       sequelize,
-      modelName: "User",
+      modelName: "UserInfo",
     }
   );
 
-export default PersistedUser;
+export default PersistedUserInfo;

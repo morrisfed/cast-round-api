@@ -13,17 +13,28 @@ import { VerifyFunction as UniqueTokenVerifyFunction } from "passport-unique-tok
 
 import { URLSearchParams } from "url";
 
-import env from "./utils/env";
-import getMwUser, {
+import env from "../utils/env";
+import { fetchUserInfoForMwAccessToken } from "../membership-works/mwUserInfo";
+import { importUsers } from "../user/importUsers";
+import { UserInfo } from "../interfaces/UserInfo";
+import {
   isMwProfileParseError,
   isMwUnrecognisedMembershipType,
-} from "./membership-works";
-import { MembershipWorksUser } from "./interfaces/User";
+} from "../membership-works/fetchMwUserProfile";
+import { getUserInfo } from "../user/userInfo";
 
-const mwUserToUser = (mwUser: MembershipWorksUser): Express.User => ({
-  id: mwUser.account_id,
-  name: `${mwUser.name} (${mwUser.contact_name})`,
-  type: mwUser.type,
+declare global {
+  namespace Express {
+    interface User extends UserInfo {
+      authVia: "membership-works" | "delegate";
+    }
+  }
+}
+
+type SessionUser = { id: string; authVia: Express.User["authVia"] };
+
+const userInfoToExpressUser = (userInfo: UserInfo): Express.User => ({
+  ...userInfo,
   authVia: "membership-works",
 });
 
@@ -34,8 +45,9 @@ const mwVerifyFunction: Oauth2VerifyFunction = async (
   verified: Oauth2VerifyCallback
 ) => {
   const getUserTask = pipe(
-    getMwUser(accessToken),
-    TE.map(mwUserToUser),
+    fetchUserInfoForMwAccessToken(accessToken),
+    TE.chainFirstW((userInfo) => importUsers([userInfo])),
+    TE.map(userInfoToExpressUser),
     TE.mapLeft((e) =>
       isMwProfileParseError(e)
         ? new Error("mw-profile-parse-error", { cause: e })
@@ -86,30 +98,35 @@ passport.use(
   )
 );
 
-passport.serializeUser((user, cb) => {
-  process.nextTick(() =>
-    cb(null, {
-      id: user.id,
-      name: user.name,
-      type: user.type,
-      authVia: user.authVia,
-    })
-  );
-});
+passport.serializeUser<SessionUser>((user, done) =>
+  done(null, { id: user.id, authVia: user.authVia })
+);
 
-passport.deserializeUser((user: Express.User, cb) => {
-  process.nextTick(() => cb(null, user));
+passport.deserializeUser<SessionUser>(({ id, authVia }, done) => {
+  const deserializeUserTask = pipe(
+    getUserInfo(id),
+    TE.map((userInfo) => ({
+      authVia,
+      id: userInfo.id,
+      name: userInfo.name,
+      contactName: userInfo.contactName,
+      type: userInfo.type,
+      enabled: userInfo.enabled,
+    })),
+    TE.fold(
+      (err) => T.of(done(err)),
+      (results) => T.of(done(null, results))
+    )
+  );
+
+  deserializeUserTask();
 });
 
 const authRoute = express.Router();
 authRoute.get("/api/auth/mw", passport.authenticate("oauth2"));
 authRoute.get(
   "/api/auth/mw/callback",
-  passport.authenticate("oauth2", {
-    failureRedirect: "/foo",
-    failureMessage: "Login failed",
-    successRedirect: "/",
-  }),
+  passport.authenticate("oauth2"),
   (_req: Request, res: Response) => {
     res.redirect("/");
   },
@@ -150,4 +167,7 @@ authRoute.post("/api/auth/logout", (req, res, next) => {
   });
 });
 
-export default [passport.session(), authRoute];
+export const authenticationRequestHandlers = [
+  passport.session({ pauseStream: true }),
+  authRoute,
+];

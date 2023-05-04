@@ -1,5 +1,5 @@
-import { cleanEnv, port, str, url } from 'envalid';
-import { config } from 'dotenv';
+import { cleanEnv, port, str, url } from "envalid";
+import { config } from "dotenv";
 
 config();
 
@@ -17,6 +17,8 @@ const validateEnv = () =>
     MW_OAUTH2_CALLBACK_URL: url(),
 
     SESSION_SECRET: str(),
+
+    ADMIN_MW_ACCOUNT_IDS: str(),
   });
 
 export default validateEnv();

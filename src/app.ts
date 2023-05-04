@@ -3,15 +3,13 @@ import morgan from "morgan";
 import helmet from "helmet";
 import cors from "cors";
 
-import session, { SessionOptions } from "express-session";
 import * as middlewares from "./middlewares";
-import authMiddlewares from "./app-authentication";
 import api from "./api";
-
-import sessionStore from "./session-store";
 
 import env from "./utils/env";
 import logger from "./utils/logging";
+import { sessionRequestHandler } from "./authentication/session";
+import { authenticationRequestHandlers } from "./authentication/appAuthentication";
 
 require("dotenv").config();
 
@@ -37,17 +35,8 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-const sessionOptions: SessionOptions = {
-  name: "castaround.sid",
-  secret: env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: env.isProd },
-  store: sessionStore,
-};
-app.use(session(sessionOptions));
-
-app.use(authMiddlewares);
+app.use(sessionRequestHandler);
+app.use(authenticationRequestHandlers);
 
 app.use("/api", api);
 

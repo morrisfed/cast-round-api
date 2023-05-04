@@ -1,8 +1,8 @@
 import { RequestHandler } from "express";
-import { isAdmin, isMember } from "./roles";
+import { isAdministratorRole, isMemberRole } from "../user/permissions";
 
 export const adminOnly: RequestHandler = (req, res, next) => {
-  if (isAdmin(req.user)) {
+  if (isAdministratorRole(req.user)) {
     next();
   } else {
     res.sendStatus(403);
@@ -10,7 +10,7 @@ export const adminOnly: RequestHandler = (req, res, next) => {
 };
 
 export const memberOnly: RequestHandler = (req, res, next) => {
-  if (isMember(req.user)) {
+  if (isMemberRole(req.user)) {
     next();
   } else {
     res.sendStatus(403);

@@ -1,6 +1,6 @@
 import { Sequelize, Transaction } from "sequelize";
 import env from "../../utils/env";
-import { init as initUser } from "./user";
+import { init as initUserInfo } from "./UserInfo";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,
@@ -14,7 +14,7 @@ const sequelize = new Sequelize(
   }
 );
 
-initUser(sequelize);
+initUserInfo(sequelize);
 
 export const createDbTransaction = () => sequelize.transaction();
 export const commitDbTransaction = (t: Transaction) => t.commit();

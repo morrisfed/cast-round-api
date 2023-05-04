@@ -4,11 +4,10 @@ import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
 
 import axios from "axios";
-
 import {
-  MembershipWorksUser,
+  MembershipWorksUserProfile,
   MembershipWorksUserType,
-} from "./interfaces/User";
+} from "./MembershipWorksTypes";
 
 export type MwUnrecognisedMembershipType = {
   tag: "mw-unrecognised-membership-type";
@@ -70,7 +69,7 @@ const membershipTypeToUserType = (
 
 const userInfoResponseToUser = (
   mwUserInfo: MembershipWorksUserInfoResponse
-): E.Either<MwProfileParseError, MembershipWorksUser> =>
+): E.Either<MwProfileParseError, MembershipWorksUserProfile> =>
   pipe(
     sequenceS(E.Apply)({
       account_id: E.of(mwUserInfo.account_id),
@@ -107,10 +106,8 @@ const retrieveMwUserInfo = (
     TE.map((response) => response.data)
   );
 
-const getUserInfoForToken = (accessToken: string) =>
+export const getMwUserProfileForToken = (accessToken: string) =>
   pipe(
     retrieveMwUserInfo(accessToken),
     TE.chainEitherKW(userInfoResponseToUser)
   );
-
-export default getUserInfoForToken;
