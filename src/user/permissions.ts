@@ -29,19 +29,20 @@ export const isAdministratorRole = (user: UserInfo | undefined): boolean =>
   !!user && env.ADMIN_MW_ACCOUNT_IDS.split(",").includes(user.id);
 
 export const isGroupMemberRole = (user: UserInfo | undefined): boolean =>
-  user?.type === "group-membership" ||
-  user?.type === "junior-membership" ||
-  user?.type === "associate-membership" ||
-  user?.type === "overseas-membership";
+  user?.account?.type === "group-membership" ||
+  user?.account?.type === "junior-membership" ||
+  user?.account?.type === "associate-membership" ||
+  user?.account?.type === "overseas-membership";
 
 export const isIndividualMemberRole = (user: UserInfo | undefined): boolean =>
-  user?.type === "individual-membership" || user?.type === "honorary";
+  user?.account?.type === "individual-membership" ||
+  user?.account?.type === "honorary";
 
 export const isMemberRole = (user: UserInfo | undefined): boolean =>
   isGroupMemberRole(user) || isIndividualMemberRole(user);
 
 export const isGroupDelegateRole = (user: UserInfo | undefined): boolean =>
-  user?.type === "group-delegate";
+  user?.delegate?.type === "group-delegate";
 
 export const isDelegateRole = (user: UserInfo | undefined): boolean =>
   isGroupDelegateRole(user);
@@ -53,7 +54,7 @@ export const isIndividualVoterRole = (user: UserInfo | undefined): boolean =>
   isIndividualMemberRole(user);
 
 export const isCommitteeRole = (user: UserInfo | undefined): boolean =>
-  user?.type === "committee";
+  user?.account?.type === "committee";
 
 export const hasPermission = (
   user: UserInfo | undefined,
@@ -80,3 +81,10 @@ export const getPermissions = (user: UserInfo): Permission[] => {
 
   return allPermissions.filter((permission) => hasPermission(user, permission));
 };
+
+export const hasDelegatesReadAllPermission = (user: UserInfo | undefined) =>
+  hasPermission(user, "DELEGATES_READ_ALL");
+
+export const hasDelegatesReadAllMembersPermission = (
+  user: UserInfo | undefined
+) => hasPermission(user, "DELEGATES_READ_ALL_MEMBERS");

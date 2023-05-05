@@ -12,9 +12,12 @@ export const mwUserProfileAsUserInfo = (
 ): UserInfo => ({
   id: `mw-${userProfile.account_id}`,
   enabled: true,
-  name: userProfile.name,
-  contactName: userProfile.contact_name,
-  type: userProfile.type,
+  source: "account",
+  account: {
+    name: userProfile.name,
+    contactName: userProfile.contact_name,
+    type: userProfile.type,
+  },
 });
 
 export const fetchUserInfoForMwAccessToken = (accessToken: string) =>

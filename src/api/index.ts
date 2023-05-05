@@ -12,8 +12,8 @@ router.get<{}, ProfileResponse>("/profile", (req, res) => {
     res.json({
       profile: {
         id: req.user.id,
-        name: req.user.name,
-        type: req.user.type,
+        name: req.user.account?.name || req.user.delegate?.label || "unknown",
+        type: req.user.account?.type || req.user.delegate?.type || "friend",
         permissions: getPermissions(req.user),
       },
     });

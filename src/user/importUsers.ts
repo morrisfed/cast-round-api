@@ -32,18 +32,21 @@ const processImportedUserAsUpdate =
       TE.map(() => ({ created: 0, updated: 1, error: 0, errorMessage: [] }))
     );
 
-const processImportedUserAsCreate = (
-  importedUser: UserInfo
-): TE.TaskEither<Error, ImportResult> =>
-  pipe(
-    createUserInfo(importedUser),
-    TE.map(() => ({ created: 1, updated: 0, error: 0, errorMessage: [] }))
-  );
+const processImportedUserAsCreate =
+  (t: Transaction) =>
+  (importedUser: UserInfo): TE.TaskEither<Error, ImportResult> =>
+    pipe(
+      TE.of(importedUser),
+      TE.chain(createUserInfo(t)),
+      TE.map(() => ({ created: 1, updated: 0, error: 0, errorMessage: [] }))
+    );
 
 const createUserIfNotFound =
-  (importedUser: UserInfo) => (err: Error | "not-found") => {
+  (t: Transaction) =>
+  (importedUser: UserInfo) =>
+  (err: Error | "not-found") => {
     if (err === "not-found") {
-      return processImportedUserAsCreate(importedUser);
+      return processImportedUserAsCreate(t)(importedUser);
     }
     return TE.left(err);
   };
@@ -53,7 +56,7 @@ const importUser =
   (importedUser: UserInfo): TE.TaskEither<Error, ImportResult> =>
     pipe(
       processImportedUserAsUpdate(t)(importedUser),
-      TE.orElse(createUserIfNotFound(importedUser))
+      TE.orElse(createUserIfNotFound(t)(importedUser))
     );
 
 export const importUsers = (

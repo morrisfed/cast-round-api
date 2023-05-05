@@ -33,10 +33,12 @@ declare global {
 
 type SessionUser = { id: string; authVia: Express.User["authVia"] };
 
-const userInfoToExpressUser = (userInfo: UserInfo): Express.User => ({
-  ...userInfo,
-  authVia: "membership-works",
-});
+const userInfoToExpressUser =
+  (authVia: Express.User["authVia"]) =>
+  (userInfo: UserInfo): Express.User => ({
+    ...userInfo,
+    authVia,
+  });
 
 const mwVerifyFunction: Oauth2VerifyFunction = async (
   accessToken: string,
@@ -47,7 +49,7 @@ const mwVerifyFunction: Oauth2VerifyFunction = async (
   const getUserTask = pipe(
     fetchUserInfoForMwAccessToken(accessToken),
     TE.chainFirstW((userInfo) => importUsers([userInfo])),
-    TE.map(userInfoToExpressUser),
+    TE.map(userInfoToExpressUser("membership-works")),
     TE.mapLeft((e) =>
       isMwProfileParseError(e)
         ? new Error("mw-profile-parse-error", { cause: e })
@@ -105,14 +107,7 @@ passport.serializeUser<SessionUser>((user, done) =>
 passport.deserializeUser<SessionUser>(({ id, authVia }, done) => {
   const deserializeUserTask = pipe(
     getUserInfo(id),
-    TE.map((userInfo) => ({
-      authVia,
-      id: userInfo.id,
-      name: userInfo.name,
-      contactName: userInfo.contactName,
-      type: userInfo.type,
-      enabled: userInfo.enabled,
-    })),
+    TE.map(userInfoToExpressUser(authVia)),
     TE.fold(
       (err) => T.of(done(err)),
       (results) => T.of(done(null, results))
