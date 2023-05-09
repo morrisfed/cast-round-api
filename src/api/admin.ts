@@ -8,13 +8,13 @@ import { pipe } from "fp-ts/lib/function";
 
 import { adminOnly } from "../authorisation/roleMiddleware";
 
-import { MemberUploadResponse } from "../interfaces/AdminResponses";
+import { MemberUploadResponse } from "./interfaces/AdminResponses";
 import logger from "../utils/logging";
 import { csvBufferToUserInfos } from "../membership-works/mwUserInfo";
 import { importUsers } from "../user/importUsers";
 
 const router = express.Router();
-const upload = multer({ limits: { fileSize: 200 * 1024, files: 1 } });
+const upload = multer({ limits: { fileSize: 2 * 1024 * 1024, files: 1 } });
 
 const requestFileAsBuffer = (
   file: Express.Multer.File | undefined

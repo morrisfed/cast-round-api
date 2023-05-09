@@ -10,6 +10,7 @@ import OAuth2Strategy, {
 } from "passport-oauth2";
 import UniqueTokenStrategy from "passport-unique-token";
 import { VerifyFunction as UniqueTokenVerifyFunction } from "passport-unique-token/dist/strategy";
+import nocache from "nocache";
 
 import { URLSearchParams } from "url";
 
@@ -118,6 +119,7 @@ passport.deserializeUser<SessionUser>(({ id, authVia }, done) => {
 });
 
 const authRoute = express.Router();
+authRoute.use(nocache());
 authRoute.get("/api/auth/mw", passport.authenticate("oauth2"));
 authRoute.get(
   "/api/auth/mw/callback",

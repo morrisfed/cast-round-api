@@ -52,6 +52,8 @@ export class PersistedAccount
   >
   implements AccountUserInfo
 {
+  declare id: string;
+
   declare name: string;
 
   declare contactName: string | null;
@@ -70,6 +72,8 @@ export class PersistedDelegate
   >
   implements DelegateUserInfo
 {
+  declare id: string;
+
   declare label: string;
 
   declare type: DelegateUserType;
@@ -84,6 +88,11 @@ export class PersistedDelegate
 export const initDelegate = (sequelize: Sequelize) =>
   PersistedDelegate.init(
     {
+      id: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        primaryKey: true,
+      },
       label: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -104,6 +113,11 @@ export const initDelegate = (sequelize: Sequelize) =>
 export const initAccount = (sequelize: Sequelize) =>
   PersistedAccount.init(
     {
+      id: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        primaryKey: true,
+      },
       name: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -155,18 +169,18 @@ export const initUser = (sequelize: Sequelize) => {
 
   PersistedCommonUserInfo.hasOne(PersistedAccount, {
     as: "account",
-    foreignKey: { allowNull: false },
+    foreignKey: { allowNull: false, field: "id" },
   });
   PersistedAccount.belongsTo(PersistedCommonUserInfo);
 
   PersistedCommonUserInfo.hasOne(PersistedDelegate, {
     as: "delegate",
-    foreignKey: { allowNull: false },
+    foreignKey: { allowNull: false, field: "id" },
   });
   PersistedDelegate.belongsTo(PersistedCommonUserInfo);
 
-  PersistedDelegate.belongsTo(PersistedCommonUserInfo, {
-    as: "createdBy",
-    foreignKey: { allowNull: false },
-  });
+  // PersistedDelegate.belongsTo(PersistedCommonUserInfo, {
+  //   as: "createdBy",
+  //   foreignKey: { allowNull: false, field: "createdBy" },
+  // });
 };

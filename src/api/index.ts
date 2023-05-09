@@ -1,27 +1,26 @@
 import express from "express";
 
-import ProfileResponse from "../interfaces/ProfileResponse";
-
 import adminRouter from "./admin";
-import { getPermissions } from "../user/permissions";
+import { accountsRouter } from "./accounts";
+import { profileRouter } from "./profile";
+import { delegatesRouter } from "./delegates";
 
-const router = express.Router();
+const apiRouter = express.Router();
 
-router.get<{}, ProfileResponse>("/profile", (req, res) => {
-  if (req.user) {
-    res.json({
-      profile: {
-        id: req.user.id,
-        name: req.user.account?.name || req.user.delegate?.label || "unknown",
-        type: req.user.account?.type || req.user.delegate?.type || "friend",
-        permissions: getPermissions(req.user),
-      },
-    });
+// All API paths must be authenticated.
+// Paths related to the authentication process are handled through a different router provided
+// by src/authentication/appAuthentication.ts.
+apiRouter.use((req, res, next) => {
+  if (req.isAuthenticated()) {
+    next();
   } else {
     res.sendStatus(401);
   }
 });
 
-router.use("/admin", adminRouter);
+apiRouter.use("/profile", profileRouter);
+apiRouter.use("/admin", adminRouter);
+apiRouter.use("/accounts", accountsRouter);
+apiRouter.use("/delegates", delegatesRouter);
 
-export default router;
+export default apiRouter;

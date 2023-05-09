@@ -6,24 +6,18 @@ export type UserSource = "account" | "delegate";
 export type UserType = MembershipWorksUserType | DelegateUserType;
 
 export interface AccountUserInfo {
+  id: string;
   name: string;
   contactName: string | null;
   type: MembershipWorksUserType;
 }
 
 export interface DelegateUserInfo {
+  id: string;
   label: string;
   createdBy: UserInfo;
   type: DelegateUserType;
 }
-
-// export interface CommonUserInfo {
-//   id: string;
-//   enabled: boolean;
-//   source: UserSource;
-// }
-
-// export type UserInfo = CommonUserInfo & (AccountUserInfo | DelegateUserInfo);
 
 export interface UserInfo {
   id: string;

@@ -1,5 +1,5 @@
-import { Permission } from "../user/permissions";
-import { UserType } from "./UserInfo";
+import { UserType } from "../../interfaces/UserInfo";
+import { Permission } from "../../user/permissions";
 
 export default interface ProfileResponse {
   profile: {

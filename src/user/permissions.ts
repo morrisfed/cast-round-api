@@ -2,7 +2,8 @@ import { UserInfo } from "../interfaces/UserInfo";
 import env from "../utils/env";
 
 export type Permission =
-  | "IMPORT_MEMBERS_CSV"
+  | "ACCOUNTS_READ_ALL"
+  | "ACCOUNTS_WRITE_ALL"
   | "DELEGATES_READ_ALL"
   | "DELEGATES_READ_ALL_MEMBERS"
   | "DELEGATES_READ_OWN"
@@ -66,7 +67,8 @@ export const hasPermission = (
 
 export const getPermissions = (user: UserInfo): Permission[] => {
   const allPermissions: Permission[] = [
-    "IMPORT_MEMBERS_CSV",
+    "ACCOUNTS_READ_ALL",
+    "ACCOUNTS_WRITE_ALL",
     "DELEGATES_READ_ALL",
     "DELEGATES_READ_ALL_MEMBERS",
     "DELEGATES_READ_OWN",
@@ -81,6 +83,9 @@ export const getPermissions = (user: UserInfo): Permission[] => {
 
   return allPermissions.filter((permission) => hasPermission(user, permission));
 };
+
+export const hasAccountsReadAllPermission = (user: UserInfo | undefined) =>
+  hasPermission(user, "ACCOUNTS_READ_ALL");
 
 export const hasDelegatesReadAllPermission = (user: UserInfo | undefined) =>
   hasPermission(user, "DELEGATES_READ_ALL");
