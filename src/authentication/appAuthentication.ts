@@ -17,16 +17,16 @@ import { URLSearchParams } from "url";
 import env from "../utils/env";
 import { fetchUserInfoForMwAccessToken } from "../membership-works/mwUserInfo";
 import { importUsers } from "../user/importUsers";
-import { UserInfo } from "../interfaces/UserInfo";
+import { User as AppUser } from "../interfaces/UserInfo";
 import {
   isMwProfileParseError,
   isMwUnrecognisedMembershipType,
 } from "../membership-works/fetchMwUserProfile";
-import { getUserInfo } from "../user/userInfo";
+import { getUser } from "../user/userInfo";
 
 declare global {
   namespace Express {
-    interface User extends UserInfo {
+    interface User extends AppUser {
       authVia: "membership-works" | "delegate";
     }
   }
@@ -36,7 +36,7 @@ type SessionUser = { id: string; authVia: Express.User["authVia"] };
 
 const userInfoToExpressUser =
   (authVia: Express.User["authVia"]) =>
-  (userInfo: UserInfo): Express.User => ({
+  (userInfo: AppUser): Express.User => ({
     ...userInfo,
     authVia,
   });
@@ -107,7 +107,7 @@ passport.serializeUser<SessionUser>((user, done) =>
 
 passport.deserializeUser<SessionUser>(({ id, authVia }, done) => {
   const deserializeUserTask = pipe(
-    getUserInfo(id),
+    getUser(id),
     TE.map(userInfoToExpressUser(authVia)),
     TE.fold(
       (err) => T.of(done(err)),

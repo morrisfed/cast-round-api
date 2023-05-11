@@ -8,7 +8,7 @@ import { pipe } from "fp-ts/lib/function";
 
 import { adminOnly } from "../authorisation/roleMiddleware";
 
-import { MemberUploadResponse } from "./interfaces/AdminResponses";
+import { AccountUploadResponse } from "./interfaces/AdminResponses";
 import logger from "../utils/logging";
 import { csvBufferToUserInfos } from "../membership-works/mwUserInfo";
 import { importUsers } from "../user/importUsers";
@@ -31,7 +31,7 @@ router.use(adminOnly);
 
 // Handle uploading of member CSV files and synchronise with the database.
 // router.post<{}, MemberUploadResponse>(
-router.post<{}, MemberUploadResponse>(
+router.post<{}, AccountUploadResponse>(
   "/member-upload",
   upload.single("csv"),
   async (req, res) => {
@@ -46,12 +46,12 @@ router.post<{}, MemberUploadResponse>(
       TE.map(
         ({ uploadedUsers, importResults }) =>
           ({
-            membersUploaded: uploadedUsers.length,
-            membersCreated: importResults.created,
-            membersUpdated: importResults.updated,
+            accountsUploaded: uploadedUsers.length,
+            accountsCreated: importResults.created,
+            accountsUpdated: importResults.updated,
             errors: importResults.error,
             errorMessages: importResults.errorMessage,
-          } as MemberUploadResponse)
+          } as AccountUploadResponse)
       ),
       TE.fold(
         (err) => {

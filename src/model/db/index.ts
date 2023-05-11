@@ -1,6 +1,6 @@
 import { Sequelize, Transaction } from "sequelize";
 import env from "../../utils/env";
-import { initUser } from "./UserInfo";
+import { initUser } from "./users";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,

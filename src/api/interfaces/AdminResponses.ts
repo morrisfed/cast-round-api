@@ -1,8 +1,8 @@
-export interface MemberUploadResponse {
+export interface AccountUploadResponse {
   success: boolean;
-  membersUploaded: number;
-  membersCreated: number;
-  membersUpdated: number;
+  accountsUploaded: number;
+  accountsCreated: number;
+  accountsUpdated: number;
   errors: number;
   errorMessages: string[];
 }

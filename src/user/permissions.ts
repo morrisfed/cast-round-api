@@ -1,7 +1,12 @@
-import { UserInfo } from "../interfaces/UserInfo";
+import {
+  isGroupAccountType,
+  isIndividualAccountType,
+} from "../accounts/accountTypes";
+import { User } from "../interfaces/UserInfo";
 import env from "../utils/env";
 
 export type Permission =
+  | "ADMINISTRATOR"
   | "ACCOUNTS_READ_ALL"
   | "ACCOUNTS_WRITE_ALL"
   | "DELEGATES_READ_ALL"
@@ -26,47 +31,44 @@ export type Role =
   | "INDIVIDUAL_VOTER"
   | "COMMITTEE";
 
-export const isAdministratorRole = (user: UserInfo | undefined): boolean =>
+export const isAdministratorRole = (user: User | undefined): boolean =>
   !!user && env.ADMIN_MW_ACCOUNT_IDS.split(",").includes(user.id);
 
-export const isGroupMemberRole = (user: UserInfo | undefined): boolean =>
-  user?.account?.type === "group-membership" ||
-  user?.account?.type === "junior-membership" ||
-  user?.account?.type === "associate-membership" ||
-  user?.account?.type === "overseas-membership";
+export const isGroupMemberRole = (user: User | undefined): boolean =>
+  isGroupAccountType(user?.account?.type);
 
-export const isIndividualMemberRole = (user: UserInfo | undefined): boolean =>
-  user?.account?.type === "individual-membership" ||
-  user?.account?.type === "honorary";
+export const isIndividualMemberRole = (user: User | undefined): boolean =>
+  isIndividualAccountType(user?.account?.type);
 
-export const isMemberRole = (user: UserInfo | undefined): boolean =>
+export const isMemberRole = (user: User | undefined): boolean =>
   isGroupMemberRole(user) || isIndividualMemberRole(user);
 
-export const isGroupDelegateRole = (user: UserInfo | undefined): boolean =>
+export const isGroupDelegateRole = (user: User | undefined): boolean =>
   user?.delegate?.type === "group-delegate";
 
-export const isDelegateRole = (user: UserInfo | undefined): boolean =>
+export const isDelegateRole = (user: User | undefined): boolean =>
   isGroupDelegateRole(user);
 
-export const isGroupVoterRole = (user: UserInfo | undefined): boolean =>
+export const isGroupVoterRole = (user: User | undefined): boolean =>
   isGroupDelegateRole(user) || isGroupMemberRole(user);
 
-export const isIndividualVoterRole = (user: UserInfo | undefined): boolean =>
+export const isIndividualVoterRole = (user: User | undefined): boolean =>
   isIndividualMemberRole(user);
 
-export const isCommitteeRole = (user: UserInfo | undefined): boolean =>
+export const isCommitteeRole = (user: User | undefined): boolean =>
   user?.account?.type === "committee";
 
 export const hasPermission = (
-  user: UserInfo | undefined,
+  user: User | undefined,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _permission: Permission
 ): boolean =>
   // Administrators have all permissions
   isAdministratorRole(user);
 
-export const getPermissions = (user: UserInfo): Permission[] => {
+export const getPermissions = (user: User): Permission[] => {
   const allPermissions: Permission[] = [
+    "ADMINISTRATOR",
     "ACCOUNTS_READ_ALL",
     "ACCOUNTS_WRITE_ALL",
     "DELEGATES_READ_ALL",
@@ -84,12 +86,20 @@ export const getPermissions = (user: UserInfo): Permission[] => {
   return allPermissions.filter((permission) => hasPermission(user, permission));
 };
 
-export const hasAccountsReadAllPermission = (user: UserInfo | undefined) =>
+export const hasAccountsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "ACCOUNTS_READ_ALL");
 
-export const hasDelegatesReadAllPermission = (user: UserInfo | undefined) =>
+export const hasDelegatesReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "DELEGATES_READ_ALL");
 
-export const hasDelegatesReadAllMembersPermission = (
-  user: UserInfo | undefined
-) => hasPermission(user, "DELEGATES_READ_ALL_MEMBERS");
+export const hasDelegatesReadAllMembersPermission = (user: User | undefined) =>
+  hasPermission(user, "DELEGATES_READ_ALL_MEMBERS");
+
+export const hasDelegatesWriteAllPermission = (user: User | undefined) =>
+  hasPermission(user, "DELEGATES_WRITE_ALL");
+
+export const hasDelegatesWriteAllMembersPermission = (user: User | undefined) =>
+  hasPermission(user, "DELEGATES_WRITE_ALL_MEMBERS");
+
+export const hasDelegatesWriteOwnPermission = (user: User | undefined) =>
+  hasPermission(user, "DELEGATES_WRITE_OWN");

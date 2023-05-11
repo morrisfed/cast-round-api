@@ -5,25 +5,64 @@ export type UserSource = "account" | "delegate";
 
 export type UserType = MembershipWorksUserType | DelegateUserType;
 
-export interface AccountUserInfo {
-  id: string;
+export interface AccountUserDetails {
   name: string;
   contactName: string | null;
   type: MembershipWorksUserType;
+  userId: string;
 }
 
-export interface DelegateUserInfo {
-  id: string;
+export interface AccountUserDetailsWithDelegates extends AccountUserDetails {
+  delegates?: DelegateUserDetails[];
+}
+
+export interface DelegateUserDetails {
   label: string;
-  createdBy: UserInfo;
+  createdBy: User;
+  delegateFor: AccountUserDetails;
+  type: DelegateUserType;
+
+  delegateForUserId?: string;
+  createdByUserId?: string;
+}
+
+export interface BuildableDelegateUserDetails {
+  label: string;
+  type: DelegateUserType;
+
+  delegateForUserId?: string;
+  createdByUserId: string;
+}
+
+export interface DelegateUserDetailsWithCreatedBy {
+  label: string;
+  createdBy: User;
   type: DelegateUserType;
 }
 
-export interface UserInfo {
+export interface User {
   id: string;
   enabled: boolean;
   source: UserSource;
 
-  account?: AccountUserInfo;
-  delegate?: DelegateUserInfo;
+  account?: AccountUserDetails;
+  delegate?: DelegateUserDetails;
+}
+
+export interface AccountUser extends User {
+  source: "account";
+  account: AccountUserDetails;
+}
+
+export interface AccountUserWithDelegates extends AccountUser {
+  account: AccountUserDetailsWithDelegates;
+}
+
+export interface DelegateUser extends User {
+  source: "delegate";
+  delegate: DelegateUserDetails;
+}
+
+export interface BuildableDelegateUser extends Omit<DelegateUser, "delegate"> {
+  delegate: BuildableDelegateUserDetails;
 }

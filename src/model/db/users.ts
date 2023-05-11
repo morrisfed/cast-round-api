@@ -3,7 +3,9 @@
 import {
   CreationOptional,
   DataTypes,
+  HasManyCreateAssociationMixin,
   HasOneCreateAssociationMixin,
+  HasOneSetAssociationMixin,
   InferAttributes,
   InferCreationAttributes,
   Model,
@@ -11,20 +13,20 @@ import {
   Sequelize,
 } from "sequelize";
 import {
-  AccountUserInfo,
-  DelegateUserInfo,
+  AccountUserDetails,
+  DelegateUserDetails,
   DelegateUserType,
-  UserInfo,
+  User,
   UserSource,
 } from "../../interfaces/UserInfo";
 import { MembershipWorksUserType } from "../../membership-works/MembershipWorksTypes";
 
-export class PersistedCommonUserInfo
+export class PersistedUser
   extends Model<
-    InferAttributes<PersistedCommonUserInfo>,
-    InferCreationAttributes<PersistedCommonUserInfo>
+    InferAttributes<PersistedUser>,
+    InferCreationAttributes<PersistedUser>
   >
-  implements UserInfo
+  implements User
 {
   declare id: string;
 
@@ -36,9 +38,9 @@ export class PersistedCommonUserInfo
 
   declare updatedAt: CreationOptional<Date>;
 
-  declare account?: AccountUserInfo;
+  declare account?: AccountUserDetails;
 
-  declare delegate?: DelegateUserInfo;
+  declare delegate?: DelegateUserDetails;
 
   declare createAccount: HasOneCreateAssociationMixin<PersistedAccount>;
 
@@ -50,10 +52,8 @@ export class PersistedAccount
     InferAttributes<PersistedAccount>,
     InferCreationAttributes<PersistedAccount>
   >
-  implements AccountUserInfo
+  implements AccountUserDetails
 {
-  declare id: string;
-
   declare name: string;
 
   declare contactName: string | null;
@@ -63,6 +63,12 @@ export class PersistedAccount
   declare createdAt: CreationOptional<Date>;
 
   declare updatedAt: CreationOptional<Date>;
+
+  declare userId: NonAttribute<string>;
+
+  declare delegates: NonAttribute<PersistedDelegate[]>;
+
+  declare createDelegate: HasManyCreateAssociationMixin<PersistedDelegate>;
 }
 
 export class PersistedDelegate
@@ -70,29 +76,30 @@ export class PersistedDelegate
     InferAttributes<PersistedDelegate>,
     InferCreationAttributes<PersistedDelegate>
   >
-  implements DelegateUserInfo
+  implements DelegateUserDetails
 {
-  declare id: string;
-
   declare label: string;
 
   declare type: DelegateUserType;
+
+  declare delegateForUserId: CreationOptional<string>;
+
+  declare createdByUserId: CreationOptional<string>;
 
   declare createdAt: CreationOptional<Date>;
 
   declare updatedAt: CreationOptional<Date>;
 
-  declare createdBy: NonAttribute<PersistedCommonUserInfo>;
+  declare createdBy: NonAttribute<PersistedUser>;
+
+  declare delegateFor: NonAttribute<PersistedAccount>;
+
+  declare setDelegateFor: HasOneSetAssociationMixin<PersistedAccount, string>;
 }
 
 export const initDelegate = (sequelize: Sequelize) =>
   PersistedDelegate.init(
     {
-      id: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        primaryKey: true,
-      },
       label: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -101,6 +108,8 @@ export const initDelegate = (sequelize: Sequelize) =>
         type: DataTypes.STRING,
         allowNull: false,
       },
+      delegateForUserId: { type: DataTypes.STRING, allowNull: true },
+      createdByUserId: { type: DataTypes.STRING, allowNull: false },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
     },
@@ -113,11 +122,6 @@ export const initDelegate = (sequelize: Sequelize) =>
 export const initAccount = (sequelize: Sequelize) =>
   PersistedAccount.init(
     {
-      id: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        primaryKey: true,
-      },
       name: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -138,8 +142,8 @@ export const initAccount = (sequelize: Sequelize) =>
     }
   );
 
-const initCommonUserInfo = (sequelize: Sequelize) =>
-  PersistedCommonUserInfo.init(
+const initCommonUser = (sequelize: Sequelize) =>
+  PersistedUser.init(
     {
       id: {
         type: DataTypes.STRING,
@@ -158,29 +162,66 @@ const initCommonUserInfo = (sequelize: Sequelize) =>
     },
     {
       sequelize,
-      modelName: "UserInfo",
+      modelName: "User",
     }
   );
 
 export const initUser = (sequelize: Sequelize) => {
-  initCommonUserInfo(sequelize);
+  initCommonUser(sequelize);
   initAccount(sequelize);
   initDelegate(sequelize);
 
-  PersistedCommonUserInfo.hasOne(PersistedAccount, {
+  PersistedUser.hasOne(PersistedAccount, {
     as: "account",
-    foreignKey: { allowNull: false, field: "id" },
+    foreignKey: { allowNull: false, field: "userId", name: "userId" },
   });
-  PersistedAccount.belongsTo(PersistedCommonUserInfo);
+  PersistedAccount.belongsTo(PersistedUser, {
+    as: "user",
+    foreignKey: { allowNull: false, field: "userId", name: "userId" },
+  });
 
-  PersistedCommonUserInfo.hasOne(PersistedDelegate, {
+  PersistedUser.hasOne(PersistedDelegate, {
     as: "delegate",
-    foreignKey: { allowNull: false, field: "id" },
+    foreignKey: { allowNull: false, field: "userId", name: "userId" },
   });
-  PersistedDelegate.belongsTo(PersistedCommonUserInfo);
+  PersistedDelegate.belongsTo(PersistedUser, {
+    as: "user",
+    foreignKey: { allowNull: false, field: "userId", name: "userId" },
+  });
 
-  // PersistedDelegate.belongsTo(PersistedCommonUserInfo, {
-  //   as: "createdBy",
-  //   foreignKey: { allowNull: false, field: "createdBy" },
-  // });
+  PersistedUser.hasMany(PersistedDelegate, {
+    as: "createdDelegates",
+    foreignKey: {
+      allowNull: false,
+      field: "createdByUserId",
+      name: "createdByUserId",
+    },
+  });
+  PersistedDelegate.belongsTo(PersistedUser, {
+    as: "createdBy",
+    foreignKey: {
+      allowNull: false,
+      field: "createdByUserId",
+      name: "createdByUserId",
+    },
+  });
+
+  PersistedAccount.hasMany(PersistedDelegate, {
+    as: "delegates",
+    sourceKey: "userId",
+    foreignKey: {
+      allowNull: true,
+      field: "delegateForUserId",
+      name: "delegateForUserId",
+    },
+  });
+  PersistedDelegate.belongsTo(PersistedAccount, {
+    as: "delegateFor",
+    targetKey: "userId",
+    foreignKey: {
+      allowNull: true,
+      field: "delegateForUserId",
+      name: "delegateForUserId",
+    },
+  });
 };

@@ -1,14 +1,14 @@
 import app from "./app";
 import {
   PersistedAccount,
-  PersistedCommonUserInfo,
+  PersistedUser,
   PersistedDelegate,
-} from "./model/db/UserInfo";
+} from "./model/db/users";
 import logger from "./utils/logging";
 
 const main = async () => {
   logger.info("Initialising database. Creating/altering tables...");
-  await PersistedCommonUserInfo.sync({ alter: true });
+  await PersistedUser.sync({ alter: true });
   await PersistedAccount.sync({ alter: true });
   await PersistedDelegate.sync({ alter: true });
 
