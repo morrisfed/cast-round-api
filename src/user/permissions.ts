@@ -103,3 +103,9 @@ export const hasDelegatesWriteAllMembersPermission = (user: User | undefined) =>
 
 export const hasDelegatesWriteOwnPermission = (user: User | undefined) =>
   hasPermission(user, "DELEGATES_WRITE_OWN");
+
+export const hasEventsReadAllPermission = (user: User | undefined) =>
+  hasPermission(user, "EVENTS_READ_ALL");
+
+export const hasEventsWriteAllPermission = (user: User | undefined) =>
+  hasPermission(user, "EVENTS_WRITE_ALL");

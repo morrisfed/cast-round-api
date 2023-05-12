@@ -1,6 +1,8 @@
 import { Sequelize, Transaction } from "sequelize";
 import env from "../../utils/env";
-import { initUser } from "./users";
+import { PersistedUser, initUser } from "./users";
+import { PersistedEvent, initEvent } from "./events";
+import { initVote } from "./votes";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,
@@ -14,7 +16,22 @@ const sequelize = new Sequelize(
   }
 );
 
-initUser(sequelize);
+export const initDb = async () => {
+  initUser(sequelize);
+  initEvent(sequelize);
+  initVote(sequelize);
+
+  PersistedEvent.belongsToMany(PersistedUser, {
+    through: "UserEvent",
+    as: "assignedUsers",
+  });
+  PersistedUser.belongsToMany(PersistedEvent, {
+    through: "UserEvent",
+    as: "assignedEvents",
+  });
+
+  await sequelize.sync({ alter: true });
+};
 
 export const createDbTransaction = () => sequelize.transaction();
 export const commitDbTransaction = (t: Transaction) => t.commit();

@@ -4,6 +4,7 @@ import adminRouter from "./admin";
 import { accountsRouter } from "./accounts";
 import { profileRouter } from "./profile";
 import { delegatesRouter } from "./delegates";
+import { eventsRouter } from "./events";
 
 const apiRouter = express.Router();
 
@@ -22,5 +23,6 @@ apiRouter.use("/profile", profileRouter);
 apiRouter.use("/admin", adminRouter);
 apiRouter.use("/accounts", accountsRouter);
 apiRouter.use("/delegates", delegatesRouter);
+apiRouter.use("/events", eventsRouter);
 
 export default apiRouter;

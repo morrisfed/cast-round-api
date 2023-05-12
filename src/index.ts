@@ -1,16 +1,10 @@
 import app from "./app";
-import {
-  PersistedAccount,
-  PersistedUser,
-  PersistedDelegate,
-} from "./model/db/users";
+import { initDb } from "./model/db";
 import logger from "./utils/logging";
 
 const main = async () => {
   logger.info("Initialising database. Creating/altering tables...");
-  await PersistedUser.sync({ alter: true });
-  await PersistedAccount.sync({ alter: true });
-  await PersistedDelegate.sync({ alter: true });
+  await initDb();
 
   logger.info("Starting app server...");
   const port = process.env.PORT || 5000;
