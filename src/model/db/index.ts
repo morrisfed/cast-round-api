@@ -2,7 +2,7 @@ import { Sequelize, Transaction } from "sequelize";
 import env from "../../utils/env";
 import { PersistedUser, initUser } from "./users";
 import { PersistedEvent, initEvent } from "./events";
-import { initVote } from "./votes";
+import { PersistedVote, initVote } from "./votes";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,
@@ -28,6 +28,15 @@ export const initDb = async () => {
   PersistedUser.belongsToMany(PersistedEvent, {
     through: "UserEvent",
     as: "assignedEvents",
+  });
+
+  PersistedEvent.hasMany(PersistedVote, {
+    as: "votes",
+    foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
+  });
+  PersistedVote.belongsTo(PersistedEvent, {
+    as: "event",
+    foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
   });
 
   await sequelize.sync({ alter: true });

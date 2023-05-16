@@ -1,29 +1,16 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 
-import { FindOptions, Transaction } from "sequelize";
+import { Transaction } from "sequelize";
 import { BuildableEvent, Event } from "../interfaces/events";
 import { PersistedEvent } from "./db/events";
+import { findPersistedEvent } from "./_internal/event";
 
 export const findAllEvents = (t: Transaction): TE.TaskEither<Error, Event[]> =>
   TE.tryCatch(
     () => PersistedEvent.findAll({ transaction: t }),
     (reason) => new Error(String(reason))
   );
-
-const findPersistedEvent =
-  (include: FindOptions["include"]) => (t: Transaction) => (id: number) =>
-    pipe(
-      TE.tryCatch(
-        () =>
-          PersistedEvent.findByPk(id, {
-            transaction: t,
-            include,
-          }),
-        (reason) => new Error(String(reason))
-      ),
-      TE.chainW(TE.fromNullable("not-found" as const))
-    );
 
 export const findEventById =
   (t: Transaction) =>

@@ -11,8 +11,15 @@ import {
   findEventById,
   createEvent as modelCreateEvent,
 } from "../model/events";
+import {
+  findAllEventVotes,
+  findVoteById,
+  createEventVote as modelCreateEventVote,
+  updateEventVote as modelUpdateEventVote,
+} from "../model/votes";
 import transactionalTaskEither from "../model/transaction";
 import { BuildableEvent, Event } from "../interfaces/events";
+import { BuildableVote, Vote, VoteUpdates } from "../interfaces/votes";
 
 export const getEvents = (
   user: User
@@ -57,3 +64,50 @@ export const createEvent =
 
     return TE.left("forbidden");
   };
+
+export const getEventVotes = (
+  user: User,
+  eventId: number
+): TE.TaskEither<Error | "not-found" | "forbidden", Vote[]> => {
+  if (hasEventsReadAllPermission(user)) {
+    return transactionalTaskEither((t) => findAllEventVotes(t)(eventId));
+  }
+  return TE.left("forbidden");
+};
+
+export const createEventVote = (
+  user: User,
+  eventId: number,
+  buildableVote: BuildableVote
+): TE.TaskEither<Error | "not-found" | "forbidden", Vote> => {
+  if (hasEventsWriteAllPermission(user)) {
+    return transactionalTaskEither((t) =>
+      pipe(modelCreateEventVote(t)(buildableVote))
+    );
+  }
+  return TE.left("forbidden");
+};
+
+export const updateEventVote = (
+  user: User,
+  eventId: number,
+  voteId: number,
+  voteUpdates: VoteUpdates
+): TE.TaskEither<Error | "not-found" | "forbidden", Vote> => {
+  if (hasEventsWriteAllPermission(user)) {
+    return transactionalTaskEither((t) =>
+      pipe(modelUpdateEventVote(t)(eventId, voteId)(voteUpdates))
+    );
+  }
+  return TE.left("forbidden");
+};
+
+export const getEventVote = (
+  voteId: number
+): TE.TaskEither<Error | "not-found", Vote> =>
+  transactionalTaskEither((t) =>
+    pipe(
+      findVoteById(t)(voteId),
+      TE.chainW(TE.fromNullable("not-found" as const))
+    )
+  );

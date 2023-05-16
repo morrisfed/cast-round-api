@@ -5,6 +5,7 @@ import {
   InferAttributes,
   InferCreationAttributes,
   Model,
+  NonAttribute,
   Sequelize,
 } from "sequelize";
 import { Vote, VoteStatus } from "../../interfaces/votes";
@@ -16,6 +17,10 @@ export class PersistedVote
   >
   implements Vote
 {
+  declare id: NonAttribute<number>;
+
+  declare eventId: number;
+
   declare title: string;
 
   declare description: string;
@@ -26,6 +31,7 @@ export class PersistedVote
 const initVoteModel = (sequelize: Sequelize) =>
   PersistedVote.init(
     {
+      eventId: { type: DataTypes.INTEGER, allowNull: false },
       title: {
         type: DataTypes.STRING,
         allowNull: false,
