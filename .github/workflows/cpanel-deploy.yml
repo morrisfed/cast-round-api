@@ -24,7 +24,7 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "$HOSTING_SSH_KEY" > ~/.ssh/hosting.key
+          echo "${{ secrets.HOSTING_SSH_KEY }}" > ~/.ssh/hosting.key
           chmod 600 ~/.ssh/hosting.key
           cat >>~/.ssh/config <<END
           Host hosting
