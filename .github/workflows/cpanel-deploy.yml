@@ -4,9 +4,6 @@ on:
   push:
     branches: [main]
 
-env:
-  APP_ROOT: ${{env.HOSTING_APP_ROOT}}
-
 jobs:
   build_and_deploy:
     name: Build and Deploy the API server.
@@ -44,22 +41,22 @@ jobs:
           SSH_HOST_PORT: ${{ env.HOSTING_SSH_HOST_PORT }}
 
       - name: Stop the node app
-        run: ssh hosting "/usr/sbin/cloudlinux-selector stop --json --interpreter nodejs --app-root $APP_ROOT"
+        run: ssh hosting "/usr/sbin/cloudlinux-selector stop --json --interpreter nodejs --app-root $HOSTING_APP_ROOT"
 
       - name: Remove old distribution
-        run: ssh hosting "rm -rf $APP_ROOT/dist"
+        run: ssh hosting "rm -rf $HOSTING_APP_ROOT/dist"
 
       - name: Copy package IdentityFile
-        run: scp package.json "hosting:$APP_ROOT"
+        run: scp package.json "hosting:$HOSTING_APP_ROOT"
 
       - name: Copy package lock
-        run: scp package-lock.json "hosting:$APP_ROOT"
+        run: scp package-lock.json "hosting:$HOSTING_APP_ROOT"
 
       - name: Copy distribution
-        run: scp -r dist/ "hosting:$APP_ROOT"
+        run: scp -r dist/ "hosting:$HOSTING_APP_ROOT"
 
       - name: Install modules
-        run: ssh hosting "/usr/sbin/cloudlinux-selector install-modules --json --interpreter nodejs --app-root $APP_ROOT"
+        run: ssh hosting "/usr/sbin/cloudlinux-selector install-modules --json --interpreter nodejs --app-root $HOSTING_APP_ROOT"
 
       - name: Start the node app
-        run: ssh hosting "/usr/sbin/cloudlinux-selector start --json --interpreter nodejs --app-root $APP_ROOT"
+        run: ssh hosting "/usr/sbin/cloudlinux-selector start --json --interpreter nodejs --app-root $HOSTING_APP_ROOT"
