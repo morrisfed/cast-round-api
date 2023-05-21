@@ -3,8 +3,12 @@ import { BuildableVote, Vote, VoteUpdates } from "../../interfaces/votes";
 
 interface EventResponse extends Event {}
 
+interface EventWithVotesResponse extends EventResponse {
+  votes: readonly Vote[];
+}
+
 export interface GetEventResponse {
-  event: EventResponse;
+  event: EventWithVotesResponse;
 }
 
 export interface GetEventsResponse {

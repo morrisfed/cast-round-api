@@ -8,7 +8,7 @@ import {
 } from "../user/permissions";
 import {
   findAllEvents,
-  findEventById,
+  findEventWithVotesById,
   createEvent as modelCreateEvent,
 } from "../model/events";
 import {
@@ -18,7 +18,7 @@ import {
   updateEventVote as modelUpdateEventVote,
 } from "../model/votes";
 import transactionalTaskEither from "../model/transaction";
-import { BuildableEvent, Event } from "../interfaces/events";
+import { BuildableEvent, Event, EventWithVotes } from "../interfaces/events";
 import { BuildableVote, Vote, VoteUpdates } from "../interfaces/votes";
 
 export const getEvents = (
@@ -33,11 +33,11 @@ export const getEvents = (
 export const getEvent = (
   user: User,
   eventId: number
-): TE.TaskEither<Error | "forbidden" | "not-found", Event> => {
+): TE.TaskEither<Error | "forbidden" | "not-found", EventWithVotes> => {
   if (hasEventsReadAllPermission(user)) {
     return transactionalTaskEither((t) =>
       pipe(
-        findEventById(t)(eventId),
+        findEventWithVotesById(t)(eventId),
         TE.chainW(TE.fromNullable("not-found" as const))
       )
     );
