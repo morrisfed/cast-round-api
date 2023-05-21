@@ -8,6 +8,8 @@ jobs:
   build_and_deploy:
     name: Build and Deploy the API server.
     runs-on: ubuntu-latest
+    env:
+      HOSTING_APP_ROOT: ${{ vars.HOSTING_APP_ROOT }}
     steps:
       - name: Check out source
         uses: actions/checkout@v3
@@ -24,34 +26,39 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh/
-          echo "${{ secrets.HOSTING_SSH_KEY }}" > ~/.ssh/hosting.key
+          echo "$HOSTING_SSH_KEY" > ~/.ssh/hosting.key
           chmod 600 ~/.ssh/hosting.key
           cat >>~/.ssh/config <<END
           Host hosting
-            HostName ${{ env.HOSTING_SSH_HOST }}
-            Port ${{ env.HOSTING_SSH_HOST_PORT }}
-            User ${{ env.HOSTING_SSH_USER }}
+            HostName $HOSTING_SSH_HOST
+            Port $HOSTING_SSH_HOST_PORT
+            User $HOSTING_SSH_USER
             IdentityFile ~/.ssh/hosting.key
             StrictHostKeyChecking no
           END
+        env:
+          HOSTING_SSH_HOST: ${{ vars.HOSTING_SSH_HOST }}
+          HOSTING_SSH_HOST_PORT: ${{ vars.HOSTING_SSH_HOST_PORT }}
+          HOSTING_SSH_USER: ${{ vars.HOSTING_SSH_USER }}
+          HOSTING_SSH_KEY: ${{ secrets.HOSTING_SSH_KEY }}
 
       - name: Stop the node app
-        run: ssh hosting "/usr/sbin/cloudlinux-selector stop --json --interpreter nodejs --app-root ${{ env.HOSTING_APP_ROOT}}"
+        run: ssh hosting "/usr/sbin/cloudlinux-selector stop --json --interpreter nodejs --app-root $HOSTING_APP_ROOT"
 
       - name: Remove old distribution
-        run: ssh hosting "rm -rf ${{ env.HOSTING_APP_ROOT}}/dist"
+        run: ssh hosting "rm -rf $HOSTING_APP_ROOT/dist"
 
       - name: Copy package IdentityFile
-        run: scp package.json "hosting:${{ env.HOSTING_APP_ROOT}}"
+        run: scp package.json "hosting:$HOSTING_APP_ROOT"
 
       - name: Copy package lock
-        run: scp package-lock.json "hosting:${{ env.HOSTING_APP_ROOT}}"
+        run: scp package-lock.json "hosting:$HOSTING_APP_ROOT"
 
       - name: Copy distribution
-        run: scp -r dist/ "hosting:${{ env.HOSTING_APP_ROOT}}"
+        run: scp -r dist/ "hosting:$HOSTING_APP_ROOT"
 
       - name: Install modules
-        run: ssh hosting "/usr/sbin/cloudlinux-selector install-modules --json --interpreter nodejs --app-root ${{ env.HOSTING_APP_ROOT}}"
+        run: ssh hosting "/usr/sbin/cloudlinux-selector install-modules --json --interpreter nodejs --app-root $HOSTING_APP_ROOT"
 
       - name: Start the node app
-        run: ssh hosting "/usr/sbin/cloudlinux-selector start --json --interpreter nodejs --app-root ${{ env.HOSTING_APP_ROOT}}"
+        run: ssh hosting "/usr/sbin/cloudlinux-selector start --json --interpreter nodejs --app-root $HOSTING_APP_ROOT"
