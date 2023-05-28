@@ -1,11 +1,10 @@
-import { UserType } from "../../interfaces/UserInfo";
-import { Permission } from "../../user/permissions";
+import { Permission, Role } from "../../user/permissions";
 
 export default interface ProfileResponse {
   profile: {
     id: string;
     name: string;
-    type: UserType;
+    roles: Role[];
     permissions: Permission[];
   };
 }
