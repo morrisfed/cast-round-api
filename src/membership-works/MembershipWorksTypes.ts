@@ -13,4 +13,5 @@ export interface MembershipWorksUserProfile {
   name: string;
   contact_name: string;
   type: MembershipWorksUserType;
+  isAdmin: boolean;
 }

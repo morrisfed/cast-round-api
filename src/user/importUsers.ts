@@ -31,12 +31,11 @@ const processImportedUserAsUpdate =
   ): TE.TaskEither<Error | "not-found", ImportResult> =>
     pipe(
       updateUserWithAccount(t)(importableUser.id, importableUser),
-      TE.map((foo) => ({
+      TE.map(() => ({
         created: 0,
         updated: 1,
         error: 0,
         errorMessage: [],
-        foo,
       }))
     );
 

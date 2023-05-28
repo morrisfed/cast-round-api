@@ -75,6 +75,7 @@ const memberRowToUser = (
       name: memberRowToFieldValue("Account Name")(true)(row),
       contact_name: memberRowToFieldValue("Contact Name")(false)(row),
       type: memberRowToUserType(row),
+      isAdmin: E.right(false),
     })
   );
 

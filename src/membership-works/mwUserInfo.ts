@@ -17,6 +17,7 @@ export const mwUserProfileAsUserInfo = (
     name: userProfile.name,
     contactName: userProfile.contact_name,
     type: userProfile.type,
+    isAdmin: userProfile.isAdmin,
     userId: `mw-${userProfile.account_id}`,
   },
 });

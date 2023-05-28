@@ -18,7 +18,7 @@ const validateEnv = () =>
 
     SESSION_SECRET: str(),
 
-    ADMIN_MW_ACCOUNT_IDS: str(),
+    ADMIN_MW_LABEL_ID: str(),
   });
 
 export default validateEnv();

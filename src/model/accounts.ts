@@ -138,6 +138,18 @@ const applyUpdatesToPersistedUserInfoObject =
   (user: PersistedUserWithAccount): PersistedUserWithAccount =>
     user.set(updates);
 
+const savePersistedAccount = (t: Transaction) => (pa: PersistedAccount) =>
+  TE.tryCatch(
+    () => pa.save({ transaction: t }),
+    (reason) => new Error(String(reason))
+  );
+
+const applyAndSaveUpdateToPersistedAccount =
+  (t: Transaction) =>
+  (updates: Partial<AccountUserDetails> | undefined) =>
+  (pa: PersistedAccount) =>
+    pipe(pa.set(updates ?? {}), savePersistedAccount(t));
+
 export const updateUserWithAccount =
   (t: Transaction) =>
   (
@@ -146,6 +158,9 @@ export const updateUserWithAccount =
   ): TE.TaskEither<Error | "not-found", AccountUser> =>
     pipe(
       findPersistedUserWithAccountById(t)(id),
+      TE.chainFirstW((pu) =>
+        applyAndSaveUpdateToPersistedAccount(t)(updates.account)(pu.account)
+      ),
       TE.map(applyUpdatesToPersistedUserInfoObject(updates)),
       TE.chainW(savePersistedUser(t))
     );

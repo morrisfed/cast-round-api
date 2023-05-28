@@ -6,7 +6,6 @@ import {
   isIndividualAccountType,
 } from "../accounts/accountTypes";
 import { User } from "../interfaces/UserInfo";
-import env from "../utils/env";
 
 export type Permission =
   | "ADMINISTRATOR"
@@ -37,7 +36,7 @@ export type Role =
   | "COMMITTEE";
 
 export const isAdministratorRole = (user: User | undefined): boolean =>
-  !!user && env.ADMIN_MW_ACCOUNT_IDS.split(",").includes(user.id);
+  !!user && !!user.account?.isAdmin;
 
 export const isGroupMemberRole = (user: User | undefined): boolean =>
   isGroupAccountType(user?.account?.type);

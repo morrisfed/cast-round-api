@@ -2,8 +2,12 @@ import { pipe } from "fp-ts/lib/function";
 import { sequenceS } from "fp-ts/lib/Apply";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
+import * as A from "fp-ts/lib/Array";
 
 import axios from "axios";
+
+import env from "../utils/env";
+
 import {
   MembershipWorksUserProfile,
   MembershipWorksUserType,
@@ -38,11 +42,17 @@ interface MembershipWorksMembershipType {
   label: string;
 }
 
+interface LabelType {
+  deck_id: string;
+  label: string;
+}
+
 interface MembershipWorksUserInfoResponse {
   account_id: string;
   name: string;
   contact_name: string;
   membership: MembershipWorksMembershipType[];
+  label?: LabelType[];
 }
 
 const deckIdToUserTypeMap: Record<string, MembershipWorksUserType> = {
@@ -67,6 +77,12 @@ const membershipTypeToUserType = (
     })
   );
 
+const labelTypeIsAdmin = (labelType: LabelType): boolean =>
+  labelType.deck_id === env.ADMIN_MW_LABEL_ID;
+
+const mwUserIsAdmin = (mwUserInfo: MembershipWorksUserInfoResponse): boolean =>
+  A.exists(labelTypeIsAdmin)(mwUserInfo.label ?? []);
+
 const userInfoResponseToUser = (
   mwUserInfo: MembershipWorksUserInfoResponse
 ): E.Either<MwProfileParseError, MembershipWorksUserProfile> =>
@@ -76,6 +92,7 @@ const userInfoResponseToUser = (
       name: E.of(mwUserInfo.name),
       contact_name: E.of(mwUserInfo.contact_name),
       type: membershipTypeToUserType(mwUserInfo.membership[0]),
+      isAdmin: E.of(mwUserIsAdmin(mwUserInfo)),
     }),
     E.mapLeft((e) => ({
       tag: "mw-profile-parse-error",

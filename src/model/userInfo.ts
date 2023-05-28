@@ -17,6 +17,7 @@ const persistedUserAsUserInfoTE = (
         name: persistedUser.account.name,
         contactName: persistedUser.account.contactName,
         type: persistedUser.account.type,
+        isAdmin: persistedUser.account.isAdmin,
         userId: persistedUser.account.userId,
       },
     });

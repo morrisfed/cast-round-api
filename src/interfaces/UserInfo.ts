@@ -9,6 +9,7 @@ export interface AccountUserDetails {
   name: string;
   contactName: string | null;
   type: MembershipWorksUserType;
+  isAdmin: boolean;
   userId: string;
 }
 

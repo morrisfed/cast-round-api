@@ -60,6 +60,8 @@ export class PersistedAccount
 
   declare type: MembershipWorksUserType;
 
+  declare isAdmin: boolean;
+
   declare createdAt: CreationOptional<Date>;
 
   declare updatedAt: CreationOptional<Date>;
@@ -132,6 +134,9 @@ export const initAccount = (sequelize: Sequelize) =>
       type: {
         type: DataTypes.STRING,
         allowNull: false,
+      },
+      isAdmin: {
+        type: DataTypes.BOOLEAN,
       },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
