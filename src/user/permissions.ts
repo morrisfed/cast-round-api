@@ -5,7 +5,7 @@ import {
   isGroupAccountType,
   isIndividualAccountType,
 } from "../accounts/accountTypes";
-import { User } from "../interfaces/UserInfo";
+import { User } from "../interfaces/users";
 
 export type Permission =
   | "ADMINISTRATOR"
@@ -48,10 +48,10 @@ export const isMemberRole = (user: User | undefined): boolean =>
   isGroupMemberRole(user) || isIndividualMemberRole(user);
 
 export const isGroupDelegateRole = (user: User | undefined): boolean =>
-  user?.delegate?.type === "group-delegate";
+  user?.link?.type === "group-delegate";
 
 export const isTellorDelegateRole = (user: User | undefined): boolean =>
-  user?.delegate?.type === "tellor-delegate";
+  user?.link?.type === "tellor";
 
 export const isDelegateRole = (user: User | undefined): boolean =>
   isGroupDelegateRole(user);

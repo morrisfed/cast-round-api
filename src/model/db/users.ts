@@ -14,11 +14,11 @@ import {
 } from "sequelize";
 import {
   AccountUserDetails,
-  DelegateUserDetails,
-  DelegateUserType,
+  LinkUserDetails,
+  LinkUserType,
   User,
   UserSource,
-} from "../../interfaces/UserInfo";
+} from "../../interfaces/users";
 import { MembershipWorksUserType } from "../../membership-works/MembershipWorksTypes";
 
 export class PersistedUser
@@ -40,17 +40,17 @@ export class PersistedUser
 
   declare account?: AccountUserDetails;
 
-  declare delegate?: DelegateUserDetails;
+  declare link?: LinkUserDetails;
 
-  declare createAccount: HasOneCreateAssociationMixin<PersistedAccount>;
+  declare createAccount: HasOneCreateAssociationMixin<PersistedAccountUser>;
 
-  declare createDelegate: HasOneCreateAssociationMixin<PersistedDelegate>;
+  declare createLink: HasOneCreateAssociationMixin<PersistedLinkUser>;
 }
 
-export class PersistedAccount
+export class PersistedAccountUser
   extends Model<
-    InferAttributes<PersistedAccount>,
-    InferCreationAttributes<PersistedAccount>
+    InferAttributes<PersistedAccountUser>,
+    InferCreationAttributes<PersistedAccountUser>
   >
   implements AccountUserDetails
 {
@@ -68,23 +68,23 @@ export class PersistedAccount
 
   declare userId: NonAttribute<string>;
 
-  declare delegates: NonAttribute<PersistedDelegate[]>;
+  declare links: NonAttribute<PersistedLinkUser[]>;
 
-  declare createDelegate: HasManyCreateAssociationMixin<PersistedDelegate>;
+  declare createLink: HasManyCreateAssociationMixin<PersistedLinkUser>;
 }
 
-export class PersistedDelegate
+export class PersistedLinkUser
   extends Model<
-    InferAttributes<PersistedDelegate>,
-    InferCreationAttributes<PersistedDelegate>
+    InferAttributes<PersistedLinkUser>,
+    InferCreationAttributes<PersistedLinkUser>
   >
-  implements DelegateUserDetails
+  implements LinkUserDetails
 {
   declare label: string;
 
-  declare type: DelegateUserType;
+  declare type: LinkUserType;
 
-  declare delegateForUserId: CreationOptional<string>;
+  declare linkForUserId: CreationOptional<string>;
 
   declare createdByUserId: CreationOptional<string>;
 
@@ -94,13 +94,13 @@ export class PersistedDelegate
 
   declare createdBy: NonAttribute<PersistedUser>;
 
-  declare delegateFor: NonAttribute<PersistedAccount>;
+  declare linkFor: NonAttribute<PersistedAccountUser>;
 
-  declare setDelegateFor: HasOneSetAssociationMixin<PersistedAccount, string>;
+  declare setLinkFor: HasOneSetAssociationMixin<PersistedAccountUser, string>;
 }
 
-export const initDelegate = (sequelize: Sequelize) =>
-  PersistedDelegate.init(
+export const initLinkUser = (sequelize: Sequelize) =>
+  PersistedLinkUser.init(
     {
       label: {
         type: DataTypes.STRING,
@@ -110,19 +110,19 @@ export const initDelegate = (sequelize: Sequelize) =>
         type: DataTypes.STRING,
         allowNull: false,
       },
-      delegateForUserId: { type: DataTypes.STRING, allowNull: true },
+      linkForUserId: { type: DataTypes.STRING, allowNull: true },
       createdByUserId: { type: DataTypes.STRING, allowNull: false },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
     },
     {
       sequelize,
-      modelName: "Delegate",
+      modelName: "LinkUser",
     }
   );
 
-export const initAccount = (sequelize: Sequelize) =>
-  PersistedAccount.init(
+export const initAccountUser = (sequelize: Sequelize) =>
+  PersistedAccountUser.init(
     {
       name: {
         type: DataTypes.STRING,
@@ -143,7 +143,7 @@ export const initAccount = (sequelize: Sequelize) =>
     },
     {
       sequelize,
-      modelName: "Account",
+      modelName: "AccountUser",
     }
   );
 
@@ -173,36 +173,36 @@ const initCommonUser = (sequelize: Sequelize) =>
 
 export const initUser = (sequelize: Sequelize) => {
   initCommonUser(sequelize);
-  initAccount(sequelize);
-  initDelegate(sequelize);
+  initAccountUser(sequelize);
+  initLinkUser(sequelize);
 
-  PersistedUser.hasOne(PersistedAccount, {
+  PersistedUser.hasOne(PersistedAccountUser, {
     as: "account",
     foreignKey: { allowNull: false, field: "userId", name: "userId" },
   });
-  PersistedAccount.belongsTo(PersistedUser, {
+  PersistedAccountUser.belongsTo(PersistedUser, {
     as: "user",
     foreignKey: { allowNull: false, field: "userId", name: "userId" },
   });
 
-  PersistedUser.hasOne(PersistedDelegate, {
-    as: "delegate",
+  PersistedUser.hasOne(PersistedLinkUser, {
+    as: "link",
     foreignKey: { allowNull: false, field: "userId", name: "userId" },
   });
-  PersistedDelegate.belongsTo(PersistedUser, {
+  PersistedLinkUser.belongsTo(PersistedUser, {
     as: "user",
     foreignKey: { allowNull: false, field: "userId", name: "userId" },
   });
 
-  PersistedUser.hasMany(PersistedDelegate, {
-    as: "createdDelegates",
+  PersistedUser.hasMany(PersistedLinkUser, {
+    as: "createdLinks",
     foreignKey: {
       allowNull: false,
       field: "createdByUserId",
       name: "createdByUserId",
     },
   });
-  PersistedDelegate.belongsTo(PersistedUser, {
+  PersistedLinkUser.belongsTo(PersistedUser, {
     as: "createdBy",
     foreignKey: {
       allowNull: false,
@@ -211,22 +211,22 @@ export const initUser = (sequelize: Sequelize) => {
     },
   });
 
-  PersistedAccount.hasMany(PersistedDelegate, {
-    as: "delegates",
+  PersistedAccountUser.hasMany(PersistedLinkUser, {
+    as: "links",
     sourceKey: "userId",
     foreignKey: {
       allowNull: true,
-      field: "delegateForUserId",
-      name: "delegateForUserId",
+      field: "linkForUserId",
+      name: "linkForUserId",
     },
   });
-  PersistedDelegate.belongsTo(PersistedAccount, {
-    as: "delegateFor",
+  PersistedLinkUser.belongsTo(PersistedAccountUser, {
+    as: "linkFor",
     targetKey: "userId",
     foreignKey: {
       allowNull: true,
-      field: "delegateForUserId",
-      name: "delegateForUserId",
+      field: "linkForUserId",
+      name: "linkForUserId",
     },
   });
 };

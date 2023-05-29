@@ -3,26 +3,30 @@ import { Refinement } from "fp-ts/lib/Refinement";
 import * as TE from "fp-ts/lib/TaskEither";
 
 import { Transaction } from "sequelize";
-import { PersistedAccount, PersistedUser, PersistedDelegate } from "./db/users";
+import {
+  PersistedAccountUser,
+  PersistedUser,
+  PersistedLinkUser,
+} from "./db/users";
 import {
   AccountUserDetails,
   AccountUser,
-  AccountUserWithDelegates,
-} from "../interfaces/UserInfo";
+  AccountUserWithLinks,
+} from "../interfaces/users";
 import { findPersistedUser, savePersistedUser } from "./_internal/user";
 
-interface PersistedAccountWithDelegates extends PersistedAccount {
-  delegates: PersistedDelegate[];
+interface PersistedAccountWithLinks extends PersistedAccountUser {
+  links: PersistedLinkUser[];
 }
 
 interface PersistedUserWithAccount extends PersistedUser {
   source: "account";
-  account: PersistedAccount;
+  account: PersistedAccountUser;
 }
 
-interface PersistedUserWithAccountAndAccountDelegates
+interface PersistedUserWithAccountAndAccountLinks
   extends PersistedUserWithAccount {
-  account: PersistedAccountWithDelegates;
+  account: PersistedAccountWithLinks;
 }
 
 const isPersistedUserWithAccount: Refinement<
@@ -30,11 +34,11 @@ const isPersistedUserWithAccount: Refinement<
   PersistedUserWithAccount
 > = (pui): pui is PersistedUserWithAccount => pui.account !== undefined;
 
-const isPersistedUserWithAccountAndAccountDelegates: Refinement<
+const isPersistedUserWithAccountAndAccountLinks: Refinement<
   PersistedUserWithAccount,
-  PersistedUserWithAccountAndAccountDelegates
-> = (pui): pui is PersistedUserWithAccountAndAccountDelegates =>
-  pui.account.delegates !== undefined;
+  PersistedUserWithAccountAndAccountLinks
+> = (pui): pui is PersistedUserWithAccountAndAccountLinks =>
+  pui.account.links !== undefined;
 
 const findPersistedUserWithAccountById = (t: Transaction) => (id: string) =>
   pipe(
@@ -47,14 +51,14 @@ const findPersistedUserWithAccountById = (t: Transaction) => (id: string) =>
     )
   );
 
-const findPersistedUserWithAccountAndAccountDelegatesById =
+const findPersistedUserWithAccountAndAccountLinksById =
   (t: Transaction) => (id: string) =>
     pipe(
       findPersistedUser([
         {
-          model: PersistedAccount,
+          model: PersistedAccountUser,
           as: "account",
-          include: [{ model: PersistedDelegate, as: "delegates" }],
+          include: [{ model: PersistedLinkUser, as: "links" }],
         },
       ])(t)(id),
       TE.chainW(
@@ -65,8 +69,8 @@ const findPersistedUserWithAccountAndAccountDelegatesById =
       ),
       TE.chainW(
         TE.fromPredicate(
-          isPersistedUserWithAccountAndAccountDelegates,
-          () => new Error(`Data error: user ${id} has no delegates`)
+          isPersistedUserWithAccountAndAccountLinks,
+          () => new Error(`Data error: user ${id} has no links`)
         )
       )
     );
@@ -75,16 +79,16 @@ export const findAllAccounts = (
   t: Transaction
 ): TE.TaskEither<Error, AccountUserDetails[]> =>
   TE.tryCatch(
-    () => PersistedAccount.findAll({ transaction: t }),
+    () => PersistedAccountUser.findAll({ transaction: t }),
     (reason) => new Error(String(reason))
   );
 
-export const findAccountUserWithDelegatesById =
+export const findAccountUserWithLinksById =
   (t: Transaction) =>
   (
     id: string
-  ): TE.TaskEither<Error | "not-found", AccountUserWithDelegates | null> =>
-    findPersistedUserWithAccountAndAccountDelegatesById(t)(id);
+  ): TE.TaskEither<Error | "not-found", AccountUserWithLinks | null> =>
+    findPersistedUserWithAccountAndAccountLinksById(t)(id);
 
 const createPersistedUserWithAccount =
   (t: Transaction) => (userWithAccount: AccountUser) =>
@@ -138,7 +142,7 @@ const applyUpdatesToPersistedUserInfoObject =
   (user: PersistedUserWithAccount): PersistedUserWithAccount =>
     user.set(updates);
 
-const savePersistedAccount = (t: Transaction) => (pa: PersistedAccount) =>
+const savePersistedAccount = (t: Transaction) => (pa: PersistedAccountUser) =>
   TE.tryCatch(
     () => pa.save({ transaction: t }),
     (reason) => new Error(String(reason))
@@ -147,7 +151,7 @@ const savePersistedAccount = (t: Transaction) => (pa: PersistedAccount) =>
 const applyAndSaveUpdateToPersistedAccount =
   (t: Transaction) =>
   (updates: Partial<AccountUserDetails> | undefined) =>
-  (pa: PersistedAccount) =>
+  (pa: PersistedAccountUser) =>
     pipe(pa.set(updates ?? {}), savePersistedAccount(t));
 
 export const updateUserWithAccount =

@@ -3,7 +3,7 @@ import * as TE from "fp-ts/lib/TaskEither";
 import * as ROA from "fp-ts/lib/ReadonlyArray";
 
 import { MembershipWorksUserProfile } from "./MembershipWorksTypes";
-import { AccountUser } from "../interfaces/UserInfo";
+import { AccountUser } from "../interfaces/users";
 import { getMwUserProfileForToken } from "./fetchMwUserProfile";
 import { bufferToMwUserProfiles } from "./readMwCsvBuffer";
 

@@ -1,7 +1,7 @@
 import {
   AccountUserDetails,
-  DelegateUserDetailsWithCreatedBy,
-} from "../../interfaces/UserInfo";
+  LinkUserDetailsWithCreatedBy,
+} from "../../interfaces/users";
 
 interface AccountResponse extends AccountUserDetails {}
 
@@ -14,7 +14,7 @@ export interface GetAccountsResponse {
 }
 
 export interface GetAccountDelegatesResponse {
-  delegates: readonly DelegateUserDetailsWithCreatedBy[];
+  delegates: readonly LinkUserDetailsWithCreatedBy[];
 }
 
 export interface CreateAccountDelegateResponse {

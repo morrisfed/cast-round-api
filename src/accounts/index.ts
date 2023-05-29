@@ -4,16 +4,16 @@ import * as TE from "fp-ts/lib/TaskEither";
 import {
   AccountUser,
   AccountUserDetails,
-  DelegateUserDetailsWithCreatedBy,
+  LinkUserDetailsWithCreatedBy,
   User,
-} from "../interfaces/UserInfo";
+} from "../interfaces/users";
 import {
-  findAccountUserWithDelegatesById,
+  findAccountUserWithLinksById,
   findAllAccounts,
-} from "../model/accounts";
+} from "../model/account-users";
 import transactionalTaskEither from "../model/transaction";
 import { hasAccountsReadAllPermission } from "../user/permissions";
-import { findDelegatesWithCreatedByByDelegateForAccountId } from "../model/delegates";
+import { findLinkUsersDetailsWithCreatedByLinkUserForAccountId } from "../model/link-users";
 
 export const getAccounts = (
   user: User
@@ -31,7 +31,7 @@ export const getAccountUser = (
   if (hasAccountsReadAllPermission(user)) {
     return transactionalTaskEither((t) =>
       pipe(
-        findAccountUserWithDelegatesById(t)(accountId),
+        findAccountUserWithLinksById(t)(accountId),
         TE.chainW(TE.fromNullable("not-found" as const))
       )
     );
@@ -45,12 +45,12 @@ export const getAccountDelegates =
     accountId: string
   ): TE.TaskEither<
     Error | "forbidden" | "account-not-found",
-    readonly DelegateUserDetailsWithCreatedBy[]
+    readonly LinkUserDetailsWithCreatedBy[]
   > => {
     if (hasAccountsReadAllPermission(user)) {
       return transactionalTaskEither((t) =>
         pipe(
-          findDelegatesWithCreatedByByDelegateForAccountId(t)(accountId),
+          findLinkUsersDetailsWithCreatedByLinkUserForAccountId(t)(accountId),
           TE.chainW(TE.fromNullable("account-not-found" as const))
         )
       );

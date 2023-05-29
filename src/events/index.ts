@@ -1,7 +1,7 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 
-import { User } from "../interfaces/UserInfo";
+import { User } from "../interfaces/users";
 import {
   hasEventsReadAllPermission,
   hasEventsWriteAllPermission,

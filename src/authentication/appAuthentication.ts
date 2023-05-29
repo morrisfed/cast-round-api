@@ -17,7 +17,7 @@ import { URLSearchParams } from "url";
 import env from "../utils/env";
 import { fetchUserInfoForMwAccessToken } from "../membership-works/mwUserInfo";
 import { importUsers } from "../user/importUsers";
-import { User as AppUser } from "../interfaces/UserInfo";
+import { User as AppUser } from "../interfaces/users";
 import {
   isMwProfileParseError,
   isMwUnrecognisedMembershipType,
@@ -27,7 +27,7 @@ import { getUser } from "../user/userInfo";
 declare global {
   namespace Express {
     interface User extends AppUser {
-      authVia: "membership-works" | "delegate";
+      authVia: "membership-works" | "link";
     }
   }
 }
@@ -95,7 +95,7 @@ passport.use(
 passport.use(
   new UniqueTokenStrategy(
     {
-      tokenQuery: "delegate",
+      tokenQuery: "link",
     },
     delegateVerifyFunction
   )

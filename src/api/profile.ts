@@ -11,7 +11,7 @@ profileRouter.get<{}, ProfileResponse>("/", nocache(), (req, res) => {
     res.json({
       profile: {
         id: req.user.id,
-        name: req.user.account?.name || req.user.delegate?.label || "unknown",
+        name: req.user.account?.name || req.user.link?.label || "unknown",
         roles: getRoles(req.user),
         permissions: getPermissions(req.user),
       },

@@ -1,7 +1,7 @@
 import * as TE from "fp-ts/lib/TaskEither";
 import { pipe } from "fp-ts/lib/function";
 import { Transaction } from "sequelize";
-import { User, UserSource } from "../interfaces/UserInfo";
+import { User, UserSource } from "../interfaces/users";
 import { PersistedUser } from "./db/users";
 import { findPersistedUser } from "./_internal/user";
 
@@ -23,14 +23,14 @@ const persistedUserAsUserInfoTE = (
     });
   }
 
-  if (persistedUser.delegate) {
+  if (persistedUser.link) {
     return TE.of({
-      source: "delegate",
+      source: "link",
       id: persistedUser.id,
       enabled: persistedUser.enabled,
-      delegate: {
-        label: persistedUser.delegate.label,
-        type: persistedUser.delegate.type,
+      link: {
+        label: persistedUser.link.label,
+        type: persistedUser.link.type,
       },
     } as User);
   }
@@ -40,7 +40,7 @@ const persistedUserAsUserInfoTE = (
 
 export const findUserById = (t: Transaction) => (id: string) =>
   pipe(
-    findPersistedUser(["account", "delegate"])(t)(id),
+    findPersistedUser(["account", "link"])(t)(id),
     TE.chainW(persistedUserAsUserInfoTE)
   );
 

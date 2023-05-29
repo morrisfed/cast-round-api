@@ -1,4 +1,4 @@
-import { AccountUserDetails } from "../interfaces/UserInfo";
+import { AccountUserDetails } from "../interfaces/users";
 
 export const isGroupAccountType = (
   accountType: AccountUserDetails["type"] | undefined

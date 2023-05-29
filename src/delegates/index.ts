@@ -2,12 +2,12 @@ import * as TE from "fp-ts/lib/TaskEither";
 import { pipe } from "fp-ts/lib/function";
 import { randomUUID } from "crypto";
 import {
-  AccountUserDetailsWithDelegates,
-  BuildableDelegateUser,
-  DelegateUser,
-  DelegateUserDetails,
+  AccountUserDetailsWithLinks,
+  BuildableLinkUser,
+  LinkUser,
+  LinkUserDetails,
   User,
-} from "../interfaces/UserInfo";
+} from "../interfaces/users";
 import {
   hasDelegatesReadAllPermission,
   hasDelegatesWriteAllMembersPermission,
@@ -15,14 +15,14 @@ import {
   hasDelegatesWriteOwnPermission,
 } from "../user/permissions";
 import transactionalTaskEither from "../model/transaction";
-import { createDelegateUser, findAll } from "../model/delegates";
+import { createLinkUser, findAll } from "../model/link-users";
 import { isGroupAccountType } from "../accounts/accountTypes";
-import { findAccountUserWithDelegatesById } from "../model/accounts";
+import { findAccountUserWithLinksById } from "../model/account-users";
 import { CreateGroupDelegateRequest } from "./requests";
 
 export const getDelegates = (
   user: User
-): TE.TaskEither<Error | "forbidden", readonly DelegateUserDetails[]> => {
+): TE.TaskEither<Error | "forbidden", readonly LinkUserDetails[]> => {
   if (hasDelegatesReadAllPermission(user)) {
     return transactionalTaskEither((t) => findAll(t));
   }
@@ -50,7 +50,7 @@ const getGroupAccountForDelegateCreation =
     delegateForAccountId: string
   ): TE.TaskEither<
     Error | "invalid-delegate-for" | "not-found",
-    AccountUserDetailsWithDelegates
+    AccountUserDetailsWithLinks
   > => {
     // If the current user is the account user that the delegate is being created for, then return
     // the already loaded AccountUserInfo object.
@@ -64,7 +64,7 @@ const getGroupAccountForDelegateCreation =
 
     return transactionalTaskEither((t) =>
       pipe(
-        findAccountUserWithDelegatesById(t)(delegateForAccountId),
+        findAccountUserWithLinksById(t)(delegateForAccountId),
         TE.chainW(TE.fromNullable("not-found" as const)),
         TE.map((accountUser) => accountUser.account)
       )
@@ -83,7 +83,7 @@ export const createGroupDelegate =
     createRequest: CreateGroupDelegateRequest
   ): TE.TaskEither<
     Error | "forbidden" | "invalid-delegate-for" | "not-found",
-    DelegateUser
+    LinkUser
   > => {
     if (
       hasPermissionToCreateGroupDelegateForAccount(user)(
@@ -96,18 +96,18 @@ export const createGroupDelegate =
             createRequest.delegateForAccountId
           ),
           TE.chainW(() => {
-            const delegateUser: BuildableDelegateUser = {
+            const linkUser: BuildableLinkUser = {
               id: randomUUID(),
               enabled: true,
-              source: "delegate",
-              delegate: {
+              source: "link",
+              link: {
                 label: createRequest.label,
                 type: "group-delegate",
-                delegateForUserId: createRequest.delegateForAccountId,
+                linkForUserId: createRequest.delegateForAccountId,
                 createdByUserId: user.id,
               },
             };
-            return createDelegateUser(t)(delegateUser);
+            return createLinkUser(t)(linkUser);
           })
         )
       );

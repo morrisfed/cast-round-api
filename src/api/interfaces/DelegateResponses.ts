@@ -1,6 +1,6 @@
-import { DelegateUserDetails } from "../../interfaces/UserInfo";
+import { LinkUserDetails } from "../../interfaces/users";
 
-interface DelegateResponse extends DelegateUserDetails {}
+interface DelegateResponse extends LinkUserDetails {}
 
 export interface GetDelegatesResponse {
   delegates: readonly DelegateResponse[];
