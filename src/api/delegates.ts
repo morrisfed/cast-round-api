@@ -13,7 +13,7 @@ delegatesRouter.get<{}, GetDelegatesResponse>("/", async (req, res) => {
   if (req.isAuthenticated()) {
     const getDelegatesResponseTask = pipe(
       getDelegates(req.user),
-      TE.map((accounts) => ({ accounts })),
+      TE.map((delegates) => ({ delegates })),
       standardJsonResponseFold(res)
     );
 

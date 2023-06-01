@@ -59,29 +59,17 @@ eventsRouter.get<{}, GetEventsResponse>("/", async (req, res) => {
   }
 });
 
-eventsRouter.get<{ eventId: number }, GetEventResponse>(
+eventsRouter.get<EventIdObject, GetEventResponse>(
   "/:eventId",
   async (req, res) => {
     if (req.isAuthenticated()) {
       const getEventResponseTask = pipe(
-        getEvent(req.user, req.params.eventId),
-        TE.fold(
-          (err) => {
-            if (err === "forbidden") {
-              res.sendStatus(403);
-            } else if (err === "not-found") {
-              res.sendStatus(404);
-            } else {
-              res.sendStatus(500);
-              logger.error(err);
-            }
-            return T.of(undefined);
-          },
-          (event) => {
-            res.json({ event });
-            return T.of(undefined);
-          }
-        )
+        EventIdObject.decode(req.params),
+        E.mapLeft(() => "bad-request" as const),
+        TE.fromEither,
+        TE.chainW(({ eventId }) => getEvent(req.user, eventId)),
+        TE.map((event) => ({ event })),
+        standardJsonResponseFold(res)
       );
 
       await getEventResponseTask();
@@ -127,7 +115,7 @@ eventsRouter.get<EventIdObject, GetVotesResponse>(
     if (req.isAuthenticated()) {
       const getEventVotesResponseTask = pipe(
         EventIdObject.decode(req.params),
-        E.mapLeft(() => "bad-request"),
+        E.mapLeft(() => "bad-request" as const),
         TE.fromEither,
         TE.chainW(({ eventId }) => getEventVotes(req.user, eventId)),
         TE.map((votes) => ({ votes })),
