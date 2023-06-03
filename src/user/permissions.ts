@@ -1,5 +1,8 @@
+import { flow, pipe } from "fp-ts/lib/function";
 import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
+import * as S from "fp-ts/lib/Set";
+import * as E from "fp-ts/lib/Eq";
 
 import {
   isGroupAccountType,
@@ -8,7 +11,7 @@ import {
 import { User } from "../interfaces/users";
 
 export type Permission =
-  | "ADMINISTRATOR"
+  | "IMPORT_ACCOUNTS_CSV"
   | "ACCOUNTS_READ_ALL"
   | "ACCOUNTS_WRITE_ALL"
   | "DELEGATES_READ_ALL"
@@ -20,7 +23,8 @@ export type Permission =
   | "EVENTS_READ_ALL"
   | "EVENTS_READ_OWN"
   | "EVENTS_READ_UNASSIGNED"
-  | "EVENTS_WRITE_ALL";
+  | "EVENTS_READWRITE_ALL"
+  | "TELLOR_DEGATES_READWRITE";
 
 export type Role =
   | "ADMINISTRATOR"
@@ -34,6 +38,26 @@ export type Role =
   | "VOTER"
   | "TELLOR_DELEGATE"
   | "COMMITTEE";
+
+const rolePermissions: Record<Role, Array<Permission>> = {
+  ADMINISTRATOR: ["IMPORT_ACCOUNTS_CSV", "ACCOUNTS_READ_ALL"],
+  COMMITTEE: [
+    "ACCOUNTS_READ_ALL",
+    "EVENTS_READWRITE_ALL",
+    "TELLOR_DEGATES_READWRITE",
+  ],
+  MEMBER: ["EVENTS_READ_ALL"],
+  GROUP_MEMBER: [],
+  INDIVIDUAL_MEMBER: [],
+  GROUP_DELEGATE: [],
+  TELLOR_DELEGATE: [],
+  VOTER: [],
+  GROUP_VOTER: [],
+  INDIVIDUAL_VOTER: [],
+  DELEGATE: [],
+};
+
+const permissionEq = E.fromEquals<Permission>((x, y) => x === y);
 
 export const isAdministratorRole = (user: User | undefined): boolean =>
   !!user && !!user.account?.isAdmin;
@@ -68,34 +92,6 @@ export const isVotorRole = (user: User | undefined): boolean =>
 export const isCommitteeRole = (user: User | undefined): boolean =>
   user?.account?.type === "committee";
 
-export const hasPermission = (
-  user: User | undefined,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _permission: Permission
-): boolean =>
-  // Administrators have all permissions
-  isAdministratorRole(user);
-
-export const getPermissions = (user: User): Permission[] => {
-  const allPermissions: Permission[] = [
-    "ADMINISTRATOR",
-    "ACCOUNTS_READ_ALL",
-    "ACCOUNTS_WRITE_ALL",
-    "DELEGATES_READ_ALL",
-    "DELEGATES_READ_ALL_MEMBERS",
-    "DELEGATES_READ_OWN",
-    "DELEGATES_WRITE_ALL",
-    "DELEGATES_WRITE_ALL_MEMBERS",
-    "DELEGATES_WRITE_OWN",
-    "EVENTS_READ_ALL",
-    "EVENTS_READ_OWN",
-    "EVENTS_READ_UNASSIGNED",
-    "EVENTS_WRITE_ALL",
-  ];
-
-  return allPermissions.filter((permission) => hasPermission(user, permission));
-};
-
 export const getRoles = (user: User): Role[] =>
   A.compact([
     isAdministratorRole(user) ? O.some("ADMINISTRATOR") : O.none,
@@ -110,6 +106,28 @@ export const getRoles = (user: User): Role[] =>
     isIndividualVoterRole(user) ? O.some("INDIVIDUAL_VOTER") : O.none,
     isVotorRole(user) ? O.some("VOTER") : O.none,
   ]);
+
+const getPermissionsForRole = (role: Role): Permission[] =>
+  rolePermissions[role];
+
+export const getPermissions: (user: User) => Set<Permission> = flow(
+  getRoles,
+  A.map(getPermissionsForRole),
+  A.flatten,
+  S.fromArray(permissionEq)
+);
+
+export const hasPermission = (
+  user: User | undefined,
+  permission: Permission
+): boolean =>
+  pipe(
+    user,
+    O.fromNullable,
+    O.map(getPermissions),
+    O.map(S.elem(permissionEq)(permission)),
+    O.getOrElse(() => false)
+  );
 
 export const hasAccountsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "ACCOUNTS_READ_ALL");
@@ -130,7 +148,8 @@ export const hasDelegatesWriteOwnPermission = (user: User | undefined) =>
   hasPermission(user, "DELEGATES_WRITE_OWN");
 
 export const hasEventsReadAllPermission = (user: User | undefined) =>
-  hasPermission(user, "EVENTS_READ_ALL");
+  hasPermission(user, "EVENTS_READ_ALL") ||
+  hasPermission(user, "EVENTS_READWRITE_ALL");
 
 export const hasEventsWriteAllPermission = (user: User | undefined) =>
-  hasPermission(user, "EVENTS_WRITE_ALL");
+  hasPermission(user, "EVENTS_READWRITE_ALL");

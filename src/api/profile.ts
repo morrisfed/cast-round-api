@@ -1,7 +1,7 @@
 import express from "express";
 import nocache from "nocache";
 
-import { getPermissions, getRoles } from "../user/permissions";
+import { getRoles } from "../user/permissions";
 import ProfileResponse from "./interfaces/ProfileResponse";
 
 export const profileRouter = express.Router();
@@ -13,7 +13,6 @@ profileRouter.get<{}, ProfileResponse>("/", nocache(), (req, res) => {
         id: req.user.id,
         name: req.user.account?.name || req.user.link?.label || "unknown",
         roles: getRoles(req.user),
-        permissions: getPermissions(req.user),
       },
     });
   } else {
