@@ -3,6 +3,8 @@ import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import * as S from "fp-ts/lib/Set";
 import * as E from "fp-ts/lib/Eq";
+import * as Ord from "fp-ts/lib/Ord";
+import * as Str from "fp-ts/lib/string";
 
 import {
   isGroupAccountType,
@@ -13,7 +15,7 @@ import { User } from "../interfaces/users";
 export type Permission =
   | "IMPORT_ACCOUNTS_CSV"
   | "ACCOUNTS_READ_ALL"
-  | "ACCOUNTS_WRITE_ALL"
+  | "ACCOUNTS_READWRITE_ALL"
   | "DELEGATES_READ_ALL"
   | "DELEGATES_READ_ALL_MEMBERS"
   | "DELEGATES_READ_OWN"
@@ -57,7 +59,27 @@ const rolePermissions: Record<Role, Array<Permission>> = {
   DELEGATE: [],
 };
 
+const transitivePermissions: Record<Permission, Array<Permission>> = {
+  IMPORT_ACCOUNTS_CSV: [],
+  ACCOUNTS_READ_ALL: [],
+  ACCOUNTS_READWRITE_ALL: ["ACCOUNTS_READ_ALL"],
+  DELEGATES_READ_ALL: [],
+  DELEGATES_READ_ALL_MEMBERS: [],
+  DELEGATES_READ_OWN: [],
+  DELEGATES_WRITE_ALL: [],
+  DELEGATES_WRITE_ALL_MEMBERS: [],
+  DELEGATES_WRITE_OWN: [],
+  EVENTS_READ_ALL: [],
+  EVENTS_READ_OWN: [],
+  EVENTS_READ_UNASSIGNED: [],
+  EVENTS_READWRITE_ALL: ["EVENTS_READ_ALL"],
+  TELLOR_DEGATES_READWRITE: [],
+};
+
 const permissionEq = E.fromEquals<Permission>((x, y) => x === y);
+const permissionOrd = Ord.fromCompare<Permission>((x, y) =>
+  Str.Ord.compare(x, y)
+);
 
 export const isAdministratorRole = (user: User | undefined): boolean =>
   !!user && !!user.account?.isAdmin;
@@ -110,11 +132,19 @@ export const getRoles = (user: User): Role[] =>
 const getPermissionsForRole = (role: Role): Permission[] =>
   rolePermissions[role];
 
+const getTransitivePermissions = (permission: Permission): Permission[] =>
+  transitivePermissions[permission];
+
 export const getPermissions: (user: User) => Set<Permission> = flow(
   getRoles,
   A.map(getPermissionsForRole),
   A.flatten,
-  S.fromArray(permissionEq)
+  S.fromArray(permissionEq),
+  S.reduce(permissionOrd)(new Set(), (acc, x) => {
+    acc.add(x);
+    getTransitivePermissions(x).forEach((y) => acc.add(y));
+    return acc;
+  })
 );
 
 export const hasPermission = (
@@ -148,8 +178,7 @@ export const hasDelegatesWriteOwnPermission = (user: User | undefined) =>
   hasPermission(user, "DELEGATES_WRITE_OWN");
 
 export const hasEventsReadAllPermission = (user: User | undefined) =>
-  hasPermission(user, "EVENTS_READ_ALL") ||
-  hasPermission(user, "EVENTS_READWRITE_ALL");
+  hasPermission(user, "EVENTS_READ_ALL");
 
 export const hasEventsWriteAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READWRITE_ALL");
