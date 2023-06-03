@@ -2,7 +2,7 @@ import { pipe } from "fp-ts/lib/function";
 import { Refinement } from "fp-ts/lib/Refinement";
 import * as TE from "fp-ts/lib/TaskEither";
 
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 
 import { BuildableEvent, Event, EventWithVotes } from "../interfaces/events";
 import { PersistedEvent } from "./db/events";
@@ -20,6 +20,23 @@ const isEventWithVotes: Refinement<PersistedEvent, PersistedEventWithVotes> = (
 export const findAllEvents = (t: Transaction): TE.TaskEither<Error, Event[]> =>
   TE.tryCatch(
     () => PersistedEvent.findAll({ transaction: t }),
+    (reason) => new Error(String(reason))
+  );
+
+export const findEventsByDate = (t: Transaction) => (date: Date) =>
+  TE.tryCatch(
+    () =>
+      PersistedEvent.findAll({
+        where: {
+          fromDate: {
+            [Op.lte]: date,
+          },
+          toDate: {
+            [Op.gte]: date,
+          },
+        },
+        transaction: t,
+      }),
     (reason) => new Error(String(reason))
   );
 

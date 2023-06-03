@@ -4,10 +4,12 @@ import * as TE from "fp-ts/lib/TaskEither";
 import { User } from "../interfaces/users";
 import {
   hasEventsReadAllPermission,
+  hasEventsReadCurrentPermission,
   hasEventsWriteAllPermission,
 } from "../user/permissions";
 import {
   findAllEvents,
+  findEventsByDate,
   findEventWithVotesById,
   createEvent as modelCreateEvent,
 } from "../model/events";
@@ -26,6 +28,9 @@ export const getEvents = (
 ): TE.TaskEither<Error | "forbidden", readonly Event[]> => {
   if (hasEventsReadAllPermission(user)) {
     return transactionalTaskEither((t) => findAllEvents(t));
+  }
+  if (hasEventsReadCurrentPermission(user)) {
+    return transactionalTaskEither((t) => findEventsByDate(t)(new Date()));
   }
   return TE.left("forbidden");
 };

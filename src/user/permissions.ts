@@ -23,6 +23,7 @@ export type Permission =
   | "DELEGATES_WRITE_ALL_MEMBERS"
   | "DELEGATES_WRITE_OWN"
   | "EVENTS_READ_ALL"
+  | "EVENTS_READ_CURRENT"
   | "EVENTS_READ_OWN"
   | "EVENTS_READ_UNASSIGNED"
   | "EVENTS_READWRITE_ALL"
@@ -48,7 +49,7 @@ const rolePermissions: Record<Role, Array<Permission>> = {
     "EVENTS_READWRITE_ALL",
     "TELLOR_DEGATES_READWRITE",
   ],
-  MEMBER: ["EVENTS_READ_ALL"],
+  MEMBER: ["EVENTS_READ_CURRENT"],
   GROUP_MEMBER: [],
   INDIVIDUAL_MEMBER: [],
   GROUP_DELEGATE: [],
@@ -73,6 +74,7 @@ const transitivePermissions: Record<Permission, Array<Permission>> = {
   EVENTS_READ_OWN: [],
   EVENTS_READ_UNASSIGNED: [],
   EVENTS_READWRITE_ALL: ["EVENTS_READ_ALL"],
+  EVENTS_READ_CURRENT: [],
   TELLOR_DEGATES_READWRITE: [],
 };
 
@@ -179,6 +181,9 @@ export const hasDelegatesWriteOwnPermission = (user: User | undefined) =>
 
 export const hasEventsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READ_ALL");
+
+export const hasEventsReadCurrentPermission = (user: User | undefined) =>
+  hasPermission(user, "EVENTS_READ_CURRENT");
 
 export const hasEventsWriteAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READWRITE_ALL");
