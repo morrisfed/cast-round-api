@@ -14,11 +14,11 @@ const persistedUserAsUserInfoTE = (
       id: persistedUser.id,
       enabled: persistedUser.enabled,
       account: {
+        id: persistedUser.account.id,
         name: persistedUser.account.name,
         contactName: persistedUser.account.contactName,
         type: persistedUser.account.type,
         isAdmin: persistedUser.account.isAdmin,
-        userId: persistedUser.account.userId,
       },
     });
   }

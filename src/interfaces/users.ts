@@ -6,12 +6,14 @@ export type UserSource = "account" | "link";
 export type UserType = MembershipWorksUserType | LinkUserType;
 
 export interface AccountUserDetails {
+  id: string;
   name: string;
   contactName: string | null;
   type: MembershipWorksUserType;
   isAdmin: boolean;
-  userId: string;
 }
+
+export interface BuildableAccountUserDetails extends AccountUserDetails {}
 
 export interface AccountUserDetailsWithLinks extends AccountUserDetails {
   links?: LinkUserDetails[];
@@ -53,6 +55,10 @@ export interface User {
 export interface AccountUser extends User {
   source: "account";
   account: AccountUserDetails;
+}
+
+export interface BuildableAccountUser extends Omit<AccountUser, "account"> {
+  account: BuildableAccountUserDetails;
 }
 
 export interface AccountUserWithLinks extends AccountUser {

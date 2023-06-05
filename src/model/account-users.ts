@@ -12,6 +12,7 @@ import {
   AccountUserDetails,
   AccountUser,
   AccountUserWithLinks,
+  BuildableAccountUser,
 } from "../interfaces/users";
 import { findPersistedUser, savePersistedUser } from "./_internal/user";
 
@@ -91,7 +92,7 @@ export const findAccountUserWithLinksById =
     findPersistedUserWithAccountAndAccountLinksById(t)(id);
 
 const createPersistedUserWithAccount =
-  (t: Transaction) => (userWithAccount: AccountUser) =>
+  (t: Transaction) => (userWithAccount: BuildableAccountUser) =>
     pipe(
       TE.tryCatch(
         () =>

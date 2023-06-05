@@ -14,11 +14,11 @@ export const mwUserProfileAsUserInfo = (
   enabled: true,
   source: "account",
   account: {
+    id: `mw-${userProfile.account_id}`,
     name: userProfile.name,
     contactName: userProfile.contact_name,
     type: userProfile.type,
     isAdmin: userProfile.isAdmin,
-    userId: `mw-${userProfile.account_id}`,
   },
 });
 

@@ -54,6 +54,8 @@ export class PersistedAccountUser
   >
   implements AccountUserDetails
 {
+  declare id: string;
+
   declare name: string;
 
   declare contactName: string | null;
@@ -65,8 +67,6 @@ export class PersistedAccountUser
   declare createdAt: CreationOptional<Date>;
 
   declare updatedAt: CreationOptional<Date>;
-
-  declare userId: NonAttribute<string>;
 
   declare links: NonAttribute<PersistedLinkUser[]>;
 
@@ -124,6 +124,7 @@ export const initLinkUser = (sequelize: Sequelize) =>
 export const initAccountUser = (sequelize: Sequelize) =>
   PersistedAccountUser.init(
     {
+      id: { type: DataTypes.STRING, allowNull: false, primaryKey: true },
       name: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -178,11 +179,11 @@ export const initUser = (sequelize: Sequelize) => {
 
   PersistedUser.hasOne(PersistedAccountUser, {
     as: "account",
-    foreignKey: { allowNull: false, field: "userId", name: "userId" },
+    foreignKey: { allowNull: false, field: "id", name: "id" },
   });
   PersistedAccountUser.belongsTo(PersistedUser, {
     as: "user",
-    foreignKey: { allowNull: false, field: "userId", name: "userId" },
+    foreignKey: { allowNull: false, field: "id", name: "id" },
   });
 
   PersistedUser.hasOne(PersistedLinkUser, {
@@ -213,7 +214,7 @@ export const initUser = (sequelize: Sequelize) => {
 
   PersistedAccountUser.hasMany(PersistedLinkUser, {
     as: "links",
-    sourceKey: "userId",
+    sourceKey: "id",
     foreignKey: {
       allowNull: true,
       field: "linkForUserId",
@@ -222,7 +223,7 @@ export const initUser = (sequelize: Sequelize) => {
   });
   PersistedLinkUser.belongsTo(PersistedAccountUser, {
     as: "linkFor",
-    targetKey: "userId",
+    targetKey: "id",
     foreignKey: {
       allowNull: true,
       field: "linkForUserId",
