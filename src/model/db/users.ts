@@ -80,6 +80,8 @@ export class PersistedLinkUser
   >
   implements LinkUserDetails
 {
+  declare id: string;
+
   declare label: string;
 
   declare type: LinkUserType;
@@ -102,6 +104,7 @@ export class PersistedLinkUser
 export const initLinkUser = (sequelize: Sequelize) =>
   PersistedLinkUser.init(
     {
+      id: { type: DataTypes.STRING, allowNull: false, primaryKey: true },
       label: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -188,11 +191,11 @@ export const initUser = (sequelize: Sequelize) => {
 
   PersistedUser.hasOne(PersistedLinkUser, {
     as: "link",
-    foreignKey: { allowNull: false, field: "userId", name: "userId" },
+    foreignKey: { allowNull: false, field: "id", name: "id" },
   });
   PersistedLinkUser.belongsTo(PersistedUser, {
     as: "user",
-    foreignKey: { allowNull: false, field: "userId", name: "userId" },
+    foreignKey: { allowNull: false, field: "id", name: "id" },
   });
 
   PersistedUser.hasMany(PersistedLinkUser, {

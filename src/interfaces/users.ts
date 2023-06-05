@@ -20,6 +20,7 @@ export interface AccountUserDetailsWithLinks extends AccountUserDetails {
 }
 
 export interface LinkUserDetails {
+  id: string;
   label: string;
   createdBy: User;
   linkFor: AccountUserDetails;
@@ -30,6 +31,7 @@ export interface LinkUserDetails {
 }
 
 export interface BuildableLinkUserDetails {
+  id: string;
   label: string;
   type: LinkUserType;
 

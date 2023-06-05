@@ -96,11 +96,13 @@ export const createGroupDelegate =
             createRequest.delegateForAccountId
           ),
           TE.chainW(() => {
+            const id = randomUUID();
             const linkUser: BuildableLinkUser = {
-              id: randomUUID(),
+              id,
               enabled: true,
               source: "link",
               link: {
+                id,
                 label: createRequest.label,
                 type: "group-delegate",
                 linkForUserId: createRequest.delegateForAccountId,
