@@ -1,4 +1,4 @@
-import { Event } from "../../interfaces/events";
+import { Event, EventWithVotes } from "../../interfaces/events";
 import { BuildableVote, Vote, VoteUpdates } from "../../interfaces/votes";
 
 interface EventResponse extends Event {}
@@ -20,7 +20,7 @@ export interface CreateEventRequest {
 }
 
 export interface CreateEventResponse {
-  event: Event;
+  event: EventWithVotes;
 }
 
 export interface VoteResponse extends Vote {}

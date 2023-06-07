@@ -5,8 +5,14 @@ import { Response } from "express";
 
 import logger from "../../utils/logging";
 
+export type StandardJsonResponseHandleableError =
+  | Error
+  | "bad-request"
+  | "forbidden"
+  | "not-found";
+
 export const standardJsonResponseFold = <A>(res: Response<A>) =>
-  TE.fold<Error | "bad-request" | "forbidden" | "not-found", A, undefined>(
+  TE.fold<StandardJsonResponseHandleableError, A, undefined>(
     (err) => {
       if (err === "bad-request") {
         res.sendStatus(400);

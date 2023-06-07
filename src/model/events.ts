@@ -8,6 +8,7 @@ import { BuildableEvent, Event, EventWithVotes } from "../interfaces/events";
 import { PersistedEvent } from "./db/events";
 import { findPersistedEvent } from "./_internal/event";
 import { PersistedVote } from "./db/votes";
+import { Predicate } from "fp-ts/lib/Predicate";
 
 interface PersistedEventWithVotes extends PersistedEvent {
   votes: PersistedVote[];
@@ -16,6 +17,9 @@ interface PersistedEventWithVotes extends PersistedEvent {
 const isEventWithVotes: Refinement<PersistedEvent, PersistedEventWithVotes> = (
   pewv
 ): pewv is PersistedEventWithVotes => pewv.votes !== undefined;
+
+const isCurrentEvent = (currentDate: Date) => (pe: PersistedEvent) =>
+  pe.fromDate <= currentDate && pe.toDate >= currentDate;
 
 export const findAllEvents = (t: Transaction): TE.TaskEither<Error, Event[]> =>
   TE.tryCatch(
@@ -51,6 +55,21 @@ export const findEventWithVotesById =
           () => new Error(`Data error: event ${id} has no votes`)
         )
       )
+    );
+
+export const findCurrentEventWithVotesById =
+  (t: Transaction) =>
+  (id: number) =>
+  (date: Date): TE.TaskEither<Error | "not-found", EventWithVotes> =>
+    pipe(
+      findPersistedEvent(["votes"])(t)(id),
+      TE.chainW(
+        TE.fromPredicate(
+          isEventWithVotes,
+          () => new Error(`Data error: event ${id} has no votes`)
+        )
+      ),
+      TE.filterOrElseW(isCurrentEvent(date), () => "not-found" as const)
     );
 
 const savePersistedEvent =

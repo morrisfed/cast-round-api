@@ -9,6 +9,7 @@ import {
 } from "../user/permissions";
 import {
   findAllEvents,
+  findCurrentEventWithVotesById,
   findEventsByDate,
   findEventWithVotesById,
   createEvent as modelCreateEvent,
@@ -47,6 +48,15 @@ export const getEvent = (
       )
     );
   }
+
+  if (hasEventsReadCurrentPermission(user)) {
+    return transactionalTaskEither((t) =>
+      pipe(
+        findCurrentEventWithVotesById(t)(eventId)(new Date()),
+        TE.chainW(TE.fromNullable("not-found" as const))
+      )
+    );
+  }
   return TE.left("forbidden");
 };
 
@@ -60,7 +70,7 @@ export const createEvent =
   (user: User) =>
   (
     buildableEvent: BuildableEvent
-  ): TE.TaskEither<Error | "forbidden", Event> => {
+  ): TE.TaskEither<Error | "forbidden", EventWithVotes> => {
     if (hasPermissionToCreateGroupDelegateForAccount(user)) {
       return transactionalTaskEither((t) =>
         pipe(modelCreateEvent(t)(buildableEvent))

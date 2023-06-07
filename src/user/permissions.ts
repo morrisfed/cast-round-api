@@ -18,10 +18,10 @@ export type Permission =
   | "ACCOUNTS_READWRITE_ALL"
   | "DELEGATES_READ_ALL"
   | "DELEGATES_READ_ALL_MEMBERS"
-  | "DELEGATES_READ_OWN"
+  | "GROUP_DELEGATES_READ_OWN"
   | "DELEGATES_WRITE_ALL"
   | "DELEGATES_WRITE_ALL_MEMBERS"
-  | "DELEGATES_WRITE_OWN"
+  | "GROUP_DELEGATES_READWRITE_OWN"
   | "EVENTS_READ_ALL"
   | "EVENTS_READ_CURRENT"
   | "EVENTS_READ_OWN"
@@ -50,7 +50,7 @@ const rolePermissions: Record<Role, Array<Permission>> = {
     "TELLOR_DEGATES_READWRITE",
   ],
   MEMBER: ["EVENTS_READ_CURRENT"],
-  GROUP_MEMBER: [],
+  GROUP_MEMBER: ["GROUP_DELEGATES_READWRITE_OWN"],
   INDIVIDUAL_MEMBER: [],
   GROUP_DELEGATE: [],
   TELLOR_DELEGATE: [],
@@ -66,10 +66,10 @@ const transitivePermissions: Record<Permission, Array<Permission>> = {
   ACCOUNTS_READWRITE_ALL: ["ACCOUNTS_READ_ALL"],
   DELEGATES_READ_ALL: [],
   DELEGATES_READ_ALL_MEMBERS: [],
-  DELEGATES_READ_OWN: [],
+  GROUP_DELEGATES_READ_OWN: [],
   DELEGATES_WRITE_ALL: [],
   DELEGATES_WRITE_ALL_MEMBERS: [],
-  DELEGATES_WRITE_OWN: [],
+  GROUP_DELEGATES_READWRITE_OWN: ["GROUP_DELEGATES_READ_OWN"],
   EVENTS_READ_ALL: [],
   EVENTS_READ_OWN: [],
   EVENTS_READ_UNASSIGNED: [],
@@ -176,8 +176,11 @@ export const hasDelegatesWriteAllPermission = (user: User | undefined) =>
 export const hasDelegatesWriteAllMembersPermission = (user: User | undefined) =>
   hasPermission(user, "DELEGATES_WRITE_ALL_MEMBERS");
 
-export const hasDelegatesWriteOwnPermission = (user: User | undefined) =>
-  hasPermission(user, "DELEGATES_WRITE_OWN");
+export const hasGroupDelegatesWriteOwnPermission = (user: User | undefined) =>
+  hasPermission(user, "GROUP_DELEGATES_READWRITE_OWN");
+
+export const hasGroupDelegatesReadOwnPermission = (user: User | undefined) =>
+  hasPermission(user, "GROUP_DELEGATES_READ_OWN");
 
 export const hasEventsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READ_ALL");

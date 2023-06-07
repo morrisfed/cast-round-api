@@ -61,7 +61,7 @@ const createPersistedUserAsLinkUser =
                 transaction: t,
                 include: [
                   { model: PersistedUser, as: "createdBy" },
-                  { model: PersistedAccountUser, as: "delegateFor" },
+                  { model: PersistedAccountUser, as: "linkFor" },
                 ],
               }
             ),

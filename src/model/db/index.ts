@@ -1,8 +1,17 @@
 import { Sequelize, Transaction } from "sequelize";
 import env from "../../utils/env";
-import { PersistedUser, initUser } from "./users";
+import {
+  PersistedAccountUser,
+  PersistedLinkUser,
+  PersistedUser,
+  initUser,
+} from "./users";
 import { PersistedEvent, initEvent } from "./events";
 import { PersistedVote, initVote } from "./votes";
+import {
+  PersistedEventGroupDelegate,
+  initEventGroupDelegate,
+} from "./event-group-delegates";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,
@@ -20,6 +29,7 @@ export const initDb = async () => {
   initUser(sequelize);
   initEvent(sequelize);
   initVote(sequelize);
+  initEventGroupDelegate(sequelize);
 
   PersistedEvent.belongsToMany(PersistedUser, {
     through: "UserEvent",
@@ -37,6 +47,53 @@ export const initDb = async () => {
   PersistedVote.belongsTo(PersistedEvent, {
     as: "event",
     foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
+  });
+
+  PersistedEvent.hasMany(PersistedEventGroupDelegate, {
+    as: "groupDelegates",
+    foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
+  });
+  PersistedEventGroupDelegate.belongsTo(PersistedEvent, {
+    as: "event",
+    foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
+  });
+
+  PersistedLinkUser.hasMany(PersistedEventGroupDelegate, {
+    as: "events",
+    foreignKey: {
+      allowNull: false,
+      field: "delegateUserId",
+      name: "delegateUserId",
+    },
+    sourceKey: "id",
+  });
+  PersistedEventGroupDelegate.belongsTo(PersistedLinkUser, {
+    as: "delegateUser",
+    foreignKey: {
+      allowNull: false,
+      field: "delegateUserId",
+      name: "delegateUserId",
+    },
+    targetKey: "id",
+  });
+
+  PersistedAccountUser.hasMany(PersistedEventGroupDelegate, {
+    as: "eventDelegates",
+    foreignKey: {
+      allowNull: false,
+      field: "delegateForUserId",
+      name: "delegateForUserId",
+    },
+    sourceKey: "id",
+  });
+  PersistedEventGroupDelegate.belongsTo(PersistedAccountUser, {
+    as: "delegateFor",
+    foreignKey: {
+      allowNull: false,
+      field: "delegateForUserId",
+      name: "delegateForUserId",
+    },
+    targetKey: "id",
   });
 
   await sequelize.sync({ alter: true });

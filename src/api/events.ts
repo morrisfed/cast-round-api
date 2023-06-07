@@ -31,6 +31,8 @@ import {
   PatchVoteRequest,
   PatchVoteResponse,
 } from "./interfaces/EventApi";
+import { getEventGroupDelegate } from "../delegates";
+import { GroupDelegateResponse } from "./interfaces/DelegateApi";
 
 const EventIdObject = t.strict({
   eventId: IntFromString,
@@ -123,6 +125,32 @@ eventsRouter.get<EventIdObject, GetVotesResponse>(
       );
 
       await getEventVotesResponseTask();
+    } else {
+      throw new Error();
+    }
+  }
+);
+
+eventsRouter.get<EventIdObject, GroupDelegateResponse>(
+  "/:eventId/groupdelegate",
+  async (req, res) => {
+    if (req.isAuthenticated()) {
+      const getGroupDelegateResponseTask = pipe(
+        EventIdObject.decode(req.params),
+        E.mapLeft(() => "bad-request" as const),
+        TE.fromEither,
+        TE.chainW(({ eventId }) => getEventGroupDelegate(req.user)(eventId)),
+        TE.map((eventGroupDelegate) => ({
+          delegateUserId: eventGroupDelegate.delegateUser.id,
+          label: req.body.label,
+          delegateUserLoginUrl: `/api/auth/delegate/${eventGroupDelegate.delegateUserId}`,
+          eventId: eventGroupDelegate.eventId,
+          delegateForAccountUserId: eventGroupDelegate.delegateFor.id,
+        })),
+        standardJsonResponseFold(res)
+      );
+
+      await getGroupDelegateResponseTask();
     } else {
       throw new Error();
     }
