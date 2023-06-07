@@ -81,8 +81,18 @@ const createPersistedEvent =
 
 export const createEvent =
   (t: Transaction) =>
-  (buildableEvent: BuildableEvent): TE.TaskEither<Error, Event> =>
-    pipe(createPersistedEvent(t)(buildableEvent));
+  (buildableEvent: BuildableEvent): TE.TaskEither<Error, EventWithVotes> =>
+    pipe(
+      createPersistedEvent(t)(buildableEvent),
+      TE.map((event) => ({
+        id: event.id,
+        name: event.name,
+        description: event.description,
+        fromDate: event.fromDate,
+        toDate: event.toDate,
+        votes: [],
+      }))
+    );
 
 const applyUpdatesToEvent =
   (updates: Partial<Event>) =>
