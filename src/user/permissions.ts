@@ -3,8 +3,6 @@ import * as O from "fp-ts/lib/Option";
 import * as A from "fp-ts/lib/Array";
 import * as S from "fp-ts/lib/Set";
 import * as E from "fp-ts/lib/Eq";
-import * as Ord from "fp-ts/lib/Ord";
-import * as Str from "fp-ts/lib/string";
 
 import {
   isGroupAccountType,
@@ -79,9 +77,6 @@ const transitivePermissions: Record<Permission, Array<Permission>> = {
 };
 
 const permissionEq = E.fromEquals<Permission>((x, y) => x === y);
-const permissionOrd = Ord.fromCompare<Permission>((x, y) =>
-  Str.Ord.compare(x, y)
-);
 
 export const isAdministratorRole = (user: User | undefined): boolean =>
   !!user && !!user.account?.isAdmin;
@@ -137,16 +132,13 @@ const getPermissionsForRole = (role: Role): Permission[] =>
 const getTransitivePermissions = (permission: Permission): Permission[] =>
   transitivePermissions[permission];
 
-export const getPermissions: (user: User) => Set<Permission> = flow(
+const getPermissions = flow(
   getRoles,
   A.map(getPermissionsForRole),
   A.flatten,
-  S.fromArray(permissionEq),
-  S.reduce(permissionOrd)(new Set(), (acc, x) => {
-    acc.add(x);
-    getTransitivePermissions(x).forEach((y) => acc.add(y));
-    return acc;
-  })
+  A.map((permission) => [permission, ...getTransitivePermissions(permission)]),
+  A.flatten,
+  S.fromArray(permissionEq)
 );
 
 export const hasPermission = (
