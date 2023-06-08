@@ -4,7 +4,7 @@ interface DelegateResponse extends LinkUserDetails {}
 
 export interface GroupDelegateResponse {
   delegateUserId: string;
-  delegateUserLoginUrl: string;
+  delegateUserLoginPath: string;
   eventId: number;
   label: string;
   delegateForAccountUserId: string;

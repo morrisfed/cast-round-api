@@ -142,8 +142,8 @@ eventsRouter.get<EventIdObject, GroupDelegateResponse>(
         TE.chainW(({ eventId }) => getEventGroupDelegate(req.user)(eventId)),
         TE.map((eventGroupDelegate) => ({
           delegateUserId: eventGroupDelegate.delegateUser.id,
-          label: req.body.label,
-          delegateUserLoginUrl: `/api/auth/delegate/${eventGroupDelegate.delegateUserId}`,
+          label: eventGroupDelegate.delegateUser.label,
+          delegateUserLoginPath: `/api/auth/delegate/${eventGroupDelegate.delegateUserId}`,
           eventId: eventGroupDelegate.eventId,
           delegateForAccountUserId: eventGroupDelegate.delegateFor.id,
         })),
