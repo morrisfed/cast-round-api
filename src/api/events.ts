@@ -143,7 +143,7 @@ eventsRouter.get<EventIdObject, GroupDelegateResponse>(
         TE.map((eventGroupDelegate) => ({
           delegateUserId: eventGroupDelegate.delegateUser.id,
           label: eventGroupDelegate.delegateUser.label,
-          delegateUserLoginPath: `/api/auth/delegate/${eventGroupDelegate.delegateUserId}`,
+          delegateUserLoginPath: `/api/auth/link?link=${eventGroupDelegate.delegateUserId}`,
           eventId: eventGroupDelegate.eventId,
           delegateForAccountUserId: eventGroupDelegate.delegateFor.id,
         })),

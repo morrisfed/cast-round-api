@@ -65,10 +65,7 @@ const mwVerifyFunction: Oauth2VerifyFunction = async (
   getUserTask();
 };
 
-const delegateVerifyFunction: UniqueTokenVerifyFunction = async (
-  token,
-  done
-) => {
+const linkVerifyFunction: UniqueTokenVerifyFunction = async (token, done) => {
   const user = {
     id: token,
     name: "Delegate 1",
@@ -97,7 +94,7 @@ passport.use(
     {
       tokenQuery: "link",
     },
-    delegateVerifyFunction
+    linkVerifyFunction
   )
 );
 
@@ -145,7 +142,7 @@ authRoute.get(
     }
   }
 );
-authRoute.get("/api/auth/delegate", passport.authenticate("token"));
+authRoute.get("/api/auth/link", passport.authenticate("token"));
 
 export const isAuthByMw = (req: express.Request) =>
   req.user?.authVia === "membership-works";
