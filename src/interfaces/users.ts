@@ -19,15 +19,18 @@ export interface AccountUserDetailsWithLinks extends AccountUserDetails {
   links?: LinkUserDetails[];
 }
 
-export interface LinkUserDetails {
+export interface LinkUserDetailsNoExpansion {
   id: string;
   label: string;
-  createdBy: User;
-  linkFor: AccountUserDetails;
   type: LinkUserType;
 
   linkForUserId?: string;
   createdByUserId?: string;
+}
+
+export interface LinkUserDetails extends LinkUserDetailsNoExpansion {
+  createdBy: User;
+  linkFor: AccountUserDetails;
 }
 
 export interface BuildableLinkUserDetails {
@@ -51,7 +54,7 @@ export interface User {
   source: UserSource;
 
   account?: AccountUserDetails;
-  link?: LinkUserDetails;
+  link?: LinkUserDetailsNoExpansion;
 }
 
 export interface AccountUser extends User {
@@ -67,8 +70,12 @@ export interface AccountUserWithLinks extends AccountUser {
   account: AccountUserDetailsWithLinks;
 }
 
-export interface LinkUser extends User {
+export interface LinkUserNoExpansion extends User {
   source: "link";
+  link: LinkUserDetailsNoExpansion;
+}
+
+export interface LinkUser extends LinkUserNoExpansion {
   link: LinkUserDetails;
 }
 

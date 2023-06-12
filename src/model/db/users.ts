@@ -15,6 +15,7 @@ import {
 import {
   AccountUserDetails,
   LinkUserDetails,
+  LinkUserDetailsNoExpansion,
   LinkUserType,
   User,
   UserSource,
@@ -40,7 +41,7 @@ export class PersistedUser
 
   declare account?: AccountUserDetails;
 
-  declare link?: LinkUserDetails;
+  declare link?: LinkUserDetailsNoExpansion;
 
   declare createAccount: HasOneCreateAssociationMixin<PersistedAccountUser>;
 

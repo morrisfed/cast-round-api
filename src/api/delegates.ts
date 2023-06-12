@@ -41,7 +41,7 @@ delegatesRouter.post<
       TE.map((eventGroupDelegate) => ({
         delegateUserId: eventGroupDelegate.delegateUserId,
         label: req.body.label,
-        delegateUserLoginPath: `/api/auth/link?link=${eventGroupDelegate.delegateUserId}`,
+        delegateUserLoginPath: `/api/auth/link/${eventGroupDelegate.delegateUserId}`,
         eventId: eventGroupDelegate.eventId,
         delegateForAccountUserId: eventGroupDelegate.delegateForUserId,
       })),

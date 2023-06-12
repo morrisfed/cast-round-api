@@ -22,7 +22,7 @@ import {
   isMwProfileParseError,
   isMwUnrecognisedMembershipType,
 } from "../membership-works/fetchMwUserProfile";
-import { getUser } from "../user/userInfo";
+import { getLinkUser, getUser } from "../user/userInfo";
 
 declare global {
   namespace Express {
@@ -66,14 +66,19 @@ const mwVerifyFunction: Oauth2VerifyFunction = async (
 };
 
 const linkVerifyFunction: UniqueTokenVerifyFunction = async (token, done) => {
-  const user = {
-    id: token,
-    name: "Delegate 1",
-    membership: "Group Delegate",
-    authVia: "Delegate",
-  };
+  const getLinkUserTask = pipe(
+    getLinkUser(token),
+    TE.map(userInfoToExpressUser("link")),
+    TE.fold(
+      (err) =>
+        err === "not-found"
+          ? T.of(done(new Error("Unknown link user")))
+          : T.of(done(err)),
+      (results) => T.of(done(null, results))
+    )
+  );
 
-  done(null, user);
+  getLinkUserTask();
 };
 
 passport.use(
@@ -92,7 +97,7 @@ passport.use(
 passport.use(
   new UniqueTokenStrategy(
     {
-      tokenQuery: "link",
+      tokenParams: "link",
     },
     linkVerifyFunction
   )
@@ -142,7 +147,14 @@ authRoute.get(
     }
   }
 );
-authRoute.get("/api/auth/link", passport.authenticate("token"));
+
+authRoute.get(
+  "/api/auth/link/:link",
+  passport.authenticate("token"),
+  (_req: Request, res: Response) => {
+    res.redirect("/");
+  }
+);
 
 export const isAuthByMw = (req: express.Request) =>
   req.user?.authVia === "membership-works";

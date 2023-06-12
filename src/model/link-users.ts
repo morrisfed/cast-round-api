@@ -12,14 +12,16 @@ import {
   BuildableLinkUser,
   LinkUser,
   LinkUserDetailsWithCreatedBy,
+  LinkUserNoExpansion,
 } from "../interfaces/users";
+import { findPersistedUser } from "./_internal/user";
 
 interface PersistedUserAsLinkUser extends PersistedUser {
   source: "link";
   link: PersistedLinkUser;
 }
 
-const isPersistedUserWithDelegate: Refinement<
+const isPersistedUserWithLink: Refinement<
   PersistedUser,
   PersistedUserAsLinkUser
 > = (pui): pui is PersistedUserAsLinkUser => pui.link !== undefined;
@@ -75,8 +77,8 @@ const createPersistedUserAsLinkUser =
       }),
       TE.chain(
         TE.fromPredicate(
-          isPersistedUserWithDelegate,
-          () => new Error(`Data error: user ${linkUser.id} has no delegate`)
+          isPersistedUserWithLink,
+          () => new Error(`Data error: user ${linkUser.id} has no link`)
         )
       )
     );
@@ -99,4 +101,30 @@ export const findLinkUsersDetailsWithCreatedByLinkUserForAccountId =
           include: ["createdBy"],
         }),
       (reason) => new Error(String(reason))
+    );
+
+export const findLinkUserById =
+  (t: Transaction) =>
+  (id: string): TE.TaskEither<Error | "not-found", LinkUserNoExpansion> =>
+    pipe(
+      findPersistedUser(["link"])(t)(id),
+      TE.chainW(
+        TE.fromPredicate(
+          isPersistedUserWithLink,
+          () => new Error(`Data error: user ${id} has no link`)
+        )
+      ),
+      TE.map((persistedUser) => ({
+        id: persistedUser.id,
+        source: persistedUser.source,
+        enabled: persistedUser.enabled,
+        link: {
+          id: persistedUser.link.id,
+          label: persistedUser.link.label,
+          type: persistedUser.link.type,
+
+          linkForUserId: persistedUser.link.linkForUserId,
+          createdByUserId: persistedUser.link.createdByUserId,
+        },
+      }))
     );
