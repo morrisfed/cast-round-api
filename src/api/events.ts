@@ -1,6 +1,7 @@
 import * as TE from "fp-ts/lib/TaskEither";
 import * as E from "fp-ts/lib/Either";
 import * as T from "fp-ts/lib/Task";
+import * as A from "fp-ts/lib/Array";
 import * as t from "io-ts";
 import { IntFromString } from "io-ts-types/lib/IntFromString";
 import { pipe } from "fp-ts/lib/function";
@@ -33,6 +34,8 @@ import {
 } from "./interfaces/EventApi";
 import { getEventGroupDelegate } from "../delegates";
 import { GroupDelegateResponse } from "./interfaces/DelegateApi";
+import { EventTellorsResponse } from "./interfaces/TellorApi";
+import { getEventTellors } from "../tellors";
 
 const EventIdObject = t.strict({
   eventId: IntFromString,
@@ -151,6 +154,34 @@ eventsRouter.get<EventIdObject, GroupDelegateResponse>(
       );
 
       await getGroupDelegateResponseTask();
+    } else {
+      throw new Error();
+    }
+  }
+);
+
+eventsRouter.get<EventIdObject, EventTellorsResponse>(
+  "/:eventId/tellors",
+  async (req, res) => {
+    if (req.isAuthenticated()) {
+      const getEventTellorsResponseTask = pipe(
+        EventIdObject.decode(req.params),
+        E.mapLeft(() => "bad-request" as const),
+        TE.fromEither,
+        TE.chainW(({ eventId }) => getEventTellors(req.user)(eventId)),
+        TE.map(
+          A.map((tellor) => ({
+            tellorUserId: tellor.tellorUserId,
+            tellorUserLoginPath: `/api/auth/link/${tellor.tellorUserId}`,
+            eventId: tellor.eventId,
+            label: tellor.tellorUser.label,
+          }))
+        ),
+        TE.map((tellors) => ({ tellors })),
+        standardJsonResponseFold(res)
+      );
+
+      await getEventTellorsResponseTask();
     } else {
       throw new Error();
     }

@@ -174,6 +174,12 @@ export const hasGroupDelegatesWriteOwnPermission = (user: User | undefined) =>
 export const hasGroupDelegatesReadOwnPermission = (user: User | undefined) =>
   hasPermission(user, "GROUP_DELEGATES_READ_OWN");
 
+export const hasTellorDelegatesWritePermissions = (user: User | undefined) =>
+  hasPermission(user, "TELLOR_DEGATES_READWRITE");
+
+export const hasTellorDelegatesReadPermissions =
+  hasTellorDelegatesWritePermissions;
+
 export const hasEventsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READ_ALL");
 
