@@ -1,4 +1,4 @@
-import { cleanEnv, port, str, url } from "envalid";
+import { cleanEnv, port, str, url, bool } from "envalid";
 import { config } from "dotenv";
 
 config();
@@ -19,6 +19,15 @@ const validateEnv = () =>
     SESSION_SECRET: str(),
 
     ADMIN_MW_LABEL_ID: str(),
+
+    FEATURE_UI_EVENT_GROuP_DELEGATES: bool({
+      default: false,
+      desc: "Enable use of event group delegates in the frontend.",
+    }),
+    FEATURE_UI_EVENT_TELLORS: bool({
+      default: false,
+      desc: "Enable use of event tellors in the frontend.",
+    }),
   });
 
 export default validateEnv();
