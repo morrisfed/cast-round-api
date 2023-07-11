@@ -20,7 +20,7 @@ const validateEnv = () =>
 
     ADMIN_MW_LABEL_ID: str(),
 
-    FEATURE_UI_EVENT_GROuP_DELEGATES: bool({
+    FEATURE_UI_EVENT_GROUP_DELEGATES: bool({
       default: false,
       desc: "Enable use of event group delegates in the frontend.",
     }),

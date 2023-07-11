@@ -7,7 +7,7 @@ export type FrontEndFeatureFlag =
 export type FrontEndFeatureFlags = Record<FrontEndFeatureFlag, boolean>;
 
 const frontEndFeatureFlags: FrontEndFeatureFlags = {
-  "feature.ui.eventgroupdelegates": env.FEATURE_UI_EVENT_GROuP_DELEGATES,
+  "feature.ui.eventgroupdelegates": env.FEATURE_UI_EVENT_GROUP_DELEGATES,
   "feature.ui.eventtellors": env.FEATURE_UI_EVENT_TELLORS,
 };
 
