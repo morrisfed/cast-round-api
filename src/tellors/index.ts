@@ -4,15 +4,16 @@ import * as TE from "fp-ts/lib/TaskEither";
 import { randomUUID } from "crypto";
 import { BuildableLinkUser, User } from "../interfaces/users";
 import {
-  hasTellorDelegatesReadPermissions,
-  hasTellorDelegatesWritePermissions,
+  hasTellorsReadPermissions,
+  hasTellorsWritePermissions,
 } from "../user/permissions";
 import transactionalTaskEither from "../model/transaction";
-import { createLinkUser } from "../model/link-users";
+import { createLinkUser, deleteLinkUser } from "../model/link-users";
 import { getEvent } from "../events";
 import {
   findEventTellorsByEvent,
   createEventTellor as modelCreateEventTellor,
+  deleteEventTellor as modelDeleteEventTellor,
 } from "../model/event-tellors";
 import { EventTellor } from "../interfaces/tellors";
 import { CreateEventTellorRequest } from "../api/interfaces/TellorApi";
@@ -20,7 +21,7 @@ import { CreateEventTellorRequest } from "../api/interfaces/TellorApi";
 export const getEventTellors =
   (user: User) =>
   (eventId: number): TE.TaskEither<Error | "forbidden", EventTellor[]> => {
-    if (hasTellorDelegatesReadPermissions(user)) {
+    if (hasTellorsReadPermissions(user)) {
       return transactionalTaskEither((t) =>
         pipe(findEventTellorsByEvent(t)(eventId))
       );
@@ -31,7 +32,7 @@ export const getEventTellors =
 
 export const createEventTellor =
   (user: User) => (createRequest: CreateEventTellorRequest) => {
-    if (hasTellorDelegatesWritePermissions(user)) {
+    if (hasTellorsWritePermissions(user)) {
       return transactionalTaskEither((t) =>
         pipe(
           TE.Do,
@@ -57,6 +58,24 @@ export const createEventTellor =
               tellorUserId: linkUser.id,
             })
           )
+        )
+      );
+    }
+
+    return TE.left("forbidden" as const);
+  };
+
+export const removeEventTellor =
+  (user: User) =>
+  (
+    eventId: number,
+    eventTellorId: string
+  ): TE.TaskEither<Error | "forbidden", unknown> => {
+    if (hasTellorsWritePermissions(user)) {
+      return transactionalTaskEither((t) =>
+        pipe(
+          modelDeleteEventTellor(t)(eventId, eventTellorId),
+          TE.chainW(() => deleteLinkUser(t)(eventTellorId))
         )
       );
     }

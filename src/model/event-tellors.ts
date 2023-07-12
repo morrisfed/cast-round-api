@@ -70,3 +70,17 @@ export const createEventTellor =
         tellorUserId: persistedEventTellor.tellorUserId,
       }))
     );
+
+export const deleteEventTellor =
+  (t: Transaction) =>
+  (eventId: number, tellorUserId: string): TE.TaskEither<Error, unknown> =>
+    pipe(
+      TE.tryCatch(
+        () =>
+          PersistedEventTellor.destroy({
+            where: { eventId, tellorUserId },
+            transaction: t,
+          }),
+        (reason) => new Error(String(reason))
+      )
+    );

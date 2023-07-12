@@ -4,6 +4,7 @@ import * as T from "fp-ts/lib/Task";
 import * as A from "fp-ts/lib/Array";
 import * as t from "io-ts";
 import { IntFromString } from "io-ts-types/lib/IntFromString";
+import { NonEmptyString } from "io-ts-types";
 import { pipe } from "fp-ts/lib/function";
 
 import express from "express";
@@ -35,12 +36,18 @@ import {
 import { getEventGroupDelegate } from "../delegates";
 import { GroupDelegateResponse } from "./interfaces/DelegateApi";
 import { EventTellorsResponse } from "./interfaces/TellorApi";
-import { getEventTellors } from "../tellors";
+import { getEventTellors, removeEventTellor } from "../tellors";
 
 const EventIdObject = t.strict({
   eventId: IntFromString,
 });
 type EventIdObject = t.TypeOf<typeof EventIdObject>;
+
+const EventIdAndTellorIdObject = t.strict({
+  eventId: IntFromString,
+  tellorId: NonEmptyString,
+});
+type EventIdAndTellorIdObject = t.TypeOf<typeof EventIdAndTellorIdObject>;
 
 const EventIdAndVoteIdObject = t.strict({
   eventId: IntFromString,
@@ -182,6 +189,27 @@ eventsRouter.get<EventIdObject, EventTellorsResponse>(
       );
 
       await getEventTellorsResponseTask();
+    } else {
+      throw new Error();
+    }
+  }
+);
+
+eventsRouter.delete<EventIdAndTellorIdObject>(
+  "/:eventId/tellors/:tellorId",
+  async (req, res) => {
+    if (req.isAuthenticated()) {
+      const removeEventTellorResponseTask = pipe(
+        EventIdAndTellorIdObject.decode(req.params),
+        E.mapLeft(() => "bad-request" as const),
+        TE.fromEither,
+        TE.chainW(({ eventId, tellorId }) =>
+          removeEventTellor(req.user)(eventId, tellorId)
+        ),
+        standardJsonResponseFold(res)
+      );
+
+      await removeEventTellorResponseTask();
     } else {
       throw new Error();
     }

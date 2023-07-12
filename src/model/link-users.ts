@@ -14,7 +14,7 @@ import {
   LinkUserDetailsWithCreatedBy,
   LinkUserNoExpansion,
 } from "../interfaces/users";
-import { findPersistedUser } from "./_internal/user";
+import { deletePersistedUser, findPersistedUser } from "./_internal/user";
 
 interface PersistedUserAsLinkUser extends PersistedUser {
   source: "link";
@@ -87,6 +87,21 @@ export const createLinkUser =
   (t: Transaction) =>
   (delegateUserInfo: BuildableLinkUser): TE.TaskEither<Error, LinkUser> =>
     pipe(createPersistedUserAsLinkUser(t)(delegateUserInfo));
+
+export const deleteLinkUser =
+  (t: Transaction) =>
+  (linkUserId: string): TE.TaskEither<Error, unknown> =>
+    pipe(
+      TE.tryCatch(
+        () =>
+          PersistedLinkUser.destroy({
+            where: { id: linkUserId },
+            transaction: t,
+          }),
+        (reason) => new Error(String(reason))
+      ),
+      TE.chainW(() => deletePersistedUser(t)(linkUserId))
+    );
 
 export const findLinkUsersDetailsWithCreatedByLinkUserForAccountId =
   (t: Transaction) =>

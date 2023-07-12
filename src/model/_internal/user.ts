@@ -25,3 +25,9 @@ export const savePersistedUser =
       () => userInfo.save({ transaction: t }),
       (reason) => new Error(String(reason))
     );
+
+export const deletePersistedUser = (t: Transaction) => (id: string) =>
+  TE.tryCatch(
+    () => PersistedUser.destroy({ where: { id }, transaction: t }),
+    (reason) => new Error(String(reason))
+  );

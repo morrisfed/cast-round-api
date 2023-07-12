@@ -25,7 +25,7 @@ export type Permission =
   | "EVENTS_READ_OWN"
   | "EVENTS_READ_UNASSIGNED"
   | "EVENTS_READWRITE_ALL"
-  | "TELLOR_DEGATES_READWRITE";
+  | "TELLORS_READWRITE";
 
 export type Role =
   | "ADMINISTRATOR"
@@ -37,21 +37,17 @@ export type Role =
   | "GROUP_VOTER"
   | "INDIVIDUAL_VOTER"
   | "VOTER"
-  | "TELLOR_DELEGATE"
+  | "TELLOR"
   | "COMMITTEE";
 
 const rolePermissions: Record<Role, Array<Permission>> = {
   ADMINISTRATOR: ["IMPORT_ACCOUNTS_CSV", "ACCOUNTS_READ_ALL"],
-  COMMITTEE: [
-    "ACCOUNTS_READ_ALL",
-    "EVENTS_READWRITE_ALL",
-    "TELLOR_DEGATES_READWRITE",
-  ],
+  COMMITTEE: ["ACCOUNTS_READ_ALL", "EVENTS_READWRITE_ALL", "TELLORS_READWRITE"],
   MEMBER: ["EVENTS_READ_CURRENT"],
   GROUP_MEMBER: ["GROUP_DELEGATES_READWRITE_OWN"],
   INDIVIDUAL_MEMBER: [],
   GROUP_DELEGATE: [],
-  TELLOR_DELEGATE: [],
+  TELLOR: [],
   VOTER: [],
   GROUP_VOTER: [],
   INDIVIDUAL_VOTER: [],
@@ -73,7 +69,7 @@ const transitivePermissions: Record<Permission, Array<Permission>> = {
   EVENTS_READ_UNASSIGNED: [],
   EVENTS_READWRITE_ALL: ["EVENTS_READ_ALL"],
   EVENTS_READ_CURRENT: [],
-  TELLOR_DEGATES_READWRITE: [],
+  TELLORS_READWRITE: [],
 };
 
 const permissionEq = E.fromEquals<Permission>((x, y) => x === y);
@@ -120,7 +116,7 @@ export const getRoles = (user: User): Role[] =>
     isCommitteeRole(user) ? O.some("COMMITTEE") : O.none,
     isDelegateRole(user) ? O.some("DELEGATE") : O.none,
     isGroupDelegateRole(user) ? O.some("GROUP_DELEGATE") : O.none,
-    isTellorDelegateRole(user) ? O.some("TELLOR_DELEGATE") : O.none,
+    isTellorDelegateRole(user) ? O.some("TELLOR") : O.none,
     isGroupVoterRole(user) ? O.some("GROUP_VOTER") : O.none,
     isIndividualVoterRole(user) ? O.some("INDIVIDUAL_VOTER") : O.none,
     isVotorRole(user) ? O.some("VOTER") : O.none,
@@ -174,11 +170,10 @@ export const hasGroupDelegatesWriteOwnPermission = (user: User | undefined) =>
 export const hasGroupDelegatesReadOwnPermission = (user: User | undefined) =>
   hasPermission(user, "GROUP_DELEGATES_READ_OWN");
 
-export const hasTellorDelegatesWritePermissions = (user: User | undefined) =>
-  hasPermission(user, "TELLOR_DEGATES_READWRITE");
+export const hasTellorsWritePermissions = (user: User | undefined) =>
+  hasPermission(user, "TELLORS_READWRITE");
 
-export const hasTellorDelegatesReadPermissions =
-  hasTellorDelegatesWritePermissions;
+export const hasTellorsReadPermissions = hasTellorsWritePermissions;
 
 export const hasEventsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READ_ALL");
