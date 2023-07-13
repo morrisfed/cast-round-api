@@ -6,7 +6,6 @@ import {
   AccountUserDetailsWithLinks,
   BuildableLinkUser,
   LinkUser,
-  LinkUserDetails,
   User,
 } from "../interfaces/users";
 import {
@@ -17,7 +16,7 @@ import {
   hasGroupDelegatesWriteOwnPermission,
 } from "../user/permissions";
 import transactionalTaskEither from "../model/transaction";
-import { createLinkUser, findAll } from "../model/link-users";
+import { createLinkUser } from "../model/link-users";
 import {
   findEventGroupDelegateByAccountAndEvent,
   createEventGroupDelegate as modelCreateEventGroupDelegate,
@@ -45,15 +44,6 @@ const hasPermissionToCreateGroupDelegateForAccount =
     hasDelegatesWriteAllMembersPermission(user) ||
     (hasGroupDelegatesWriteOwnPermission(user) &&
       user.id === delegateForAccountId);
-
-export const getDelegates = (
-  user: User
-): TE.TaskEither<Error | "forbidden", readonly LinkUserDetails[]> => {
-  if (hasDelegatesReadAllPermission(user)) {
-    return transactionalTaskEither((t) => findAll(t));
-  }
-  return TE.left("forbidden");
-};
 
 export const getEventGroupDelegate =
   (user: User) =>

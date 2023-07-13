@@ -6,26 +6,11 @@ import { pipe } from "fp-ts/lib/function";
 import {
   CreateEventGroupDelegateRequest,
   CreateEventGroupDelegateResponse,
-  GetDelegatesResponse,
 } from "./interfaces/DelegateApi";
-import { createEventGroupDelegate, getDelegates } from "../delegates";
+import { createEventGroupDelegate } from "../delegates";
 import { standardJsonResponseFold } from "./utils";
 
 export const delegatesRouter = express.Router();
-
-delegatesRouter.get<{}, GetDelegatesResponse>("/", async (req, res) => {
-  if (req.isAuthenticated()) {
-    const getDelegatesResponseTask = pipe(
-      getDelegates(req.user),
-      TE.map((delegates) => ({ delegates })),
-      standardJsonResponseFold(res)
-    );
-
-    await getDelegatesResponseTask();
-  } else {
-    throw new Error();
-  }
-});
 
 delegatesRouter.post<
   {},

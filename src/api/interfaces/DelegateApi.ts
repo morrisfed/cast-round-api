@@ -10,10 +10,6 @@ export interface GroupDelegateResponse {
   delegateForAccountUserId: string;
 }
 
-export interface GetDelegatesResponse {
-  delegates: readonly DelegateResponse[];
-}
-
 export interface CreateDelegateResponse {
   delegate: DelegateResponse;
 }
