@@ -48,7 +48,7 @@ jobs:
       - name: Remove old distribution
         run: ssh hosting "rm -rf $HOSTING_APP_ROOT/dist"
 
-      - name: Copy package IdentityFile
+      - name: Copy package file
         run: scp package.json "hosting:$HOSTING_APP_ROOT"
 
       - name: Copy package lock
