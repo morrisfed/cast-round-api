@@ -9,7 +9,7 @@ import {
   Sequelize,
 } from "sequelize";
 import { Event } from "../../interfaces/events";
-import { Vote } from "../../interfaces/votes";
+import { Motion } from "../../interfaces/motions";
 
 export class PersistedEvent
   extends Model<
@@ -28,7 +28,7 @@ export class PersistedEvent
 
   declare toDate: Date;
 
-  declare votes?: Vote[];
+  declare motions?: Motion[];
 }
 
 const initEventModel = (sequelize: Sequelize) =>

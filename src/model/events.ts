@@ -4,19 +4,19 @@ import * as TE from "fp-ts/lib/TaskEither";
 
 import { Op, Transaction } from "sequelize";
 
-import { BuildableEvent, Event, EventWithVotes } from "../interfaces/events";
+import { BuildableEvent, Event, EventWithMotions } from "../interfaces/events";
 import { PersistedEvent } from "./db/events";
 import { findPersistedEvent } from "./_internal/event";
-import { PersistedVote } from "./db/votes";
-import { Predicate } from "fp-ts/lib/Predicate";
+import { PersistedMotion } from "./db/motions";
 
-interface PersistedEventWithVotes extends PersistedEvent {
-  votes: PersistedVote[];
+interface PersistedEventWithMotions extends PersistedEvent {
+  motions: PersistedMotion[];
 }
 
-const isEventWithVotes: Refinement<PersistedEvent, PersistedEventWithVotes> = (
-  pewv
-): pewv is PersistedEventWithVotes => pewv.votes !== undefined;
+const isEventWithMotions: Refinement<
+  PersistedEvent,
+  PersistedEventWithMotions
+> = (pewv): pewv is PersistedEventWithMotions => pewv.motions !== undefined;
 
 const isCurrentEvent = (currentDate: Date) => (pe: PersistedEvent) =>
   pe.fromDate <= currentDate && pe.toDate >= currentDate;
@@ -44,29 +44,29 @@ export const findEventsByDate = (t: Transaction) => (date: Date) =>
     (reason) => new Error(String(reason))
   );
 
-export const findEventWithVotesById =
+export const findEventWithMotionsById =
   (t: Transaction) =>
-  (id: number): TE.TaskEither<Error | "not-found", EventWithVotes> =>
+  (id: number): TE.TaskEither<Error | "not-found", EventWithMotions> =>
     pipe(
-      findPersistedEvent(["votes"])(t)(id),
+      findPersistedEvent(["motions"])(t)(id),
       TE.chainW(
         TE.fromPredicate(
-          isEventWithVotes,
-          () => new Error(`Data error: event ${id} has no votes`)
+          isEventWithMotions,
+          () => new Error(`Data error: event ${id} has no motions`)
         )
       )
     );
 
-export const findCurrentEventWithVotesById =
+export const findCurrentEventWithMotionsById =
   (t: Transaction) =>
   (id: number) =>
-  (date: Date): TE.TaskEither<Error | "not-found", EventWithVotes> =>
+  (date: Date): TE.TaskEither<Error | "not-found", EventWithMotions> =>
     pipe(
-      findPersistedEvent(["votes"])(t)(id),
+      findPersistedEvent(["motions"])(t)(id),
       TE.chainW(
         TE.fromPredicate(
-          isEventWithVotes,
-          () => new Error(`Data error: event ${id} has no votes`)
+          isEventWithMotions,
+          () => new Error(`Data error: event ${id} has no motions`)
         )
       ),
       TE.filterOrElseW(isCurrentEvent(date), () => "not-found" as const)
@@ -100,7 +100,7 @@ const createPersistedEvent =
 
 export const createEvent =
   (t: Transaction) =>
-  (buildableEvent: BuildableEvent): TE.TaskEither<Error, EventWithVotes> =>
+  (buildableEvent: BuildableEvent): TE.TaskEither<Error, EventWithMotions> =>
     pipe(
       createPersistedEvent(t)(buildableEvent),
       TE.map((event) => ({
@@ -109,7 +109,7 @@ export const createEvent =
         description: event.description,
         fromDate: event.fromDate,
         toDate: event.toDate,
-        votes: [],
+        motions: [],
       }))
     );
 

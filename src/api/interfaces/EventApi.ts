@@ -1,14 +1,18 @@
-import { Event, EventWithVotes } from "../../interfaces/events";
-import { BuildableVote, Vote, VoteUpdates } from "../../interfaces/votes";
+import { Event, EventWithMotions } from "../../interfaces/events";
+import {
+  BuildableMotion,
+  Motion,
+  MotionUpdates,
+} from "../../interfaces/motions";
 
 interface EventResponse extends Event {}
 
-interface EventWithVotesResponse extends EventResponse {
-  votes: readonly Vote[];
+interface EventWithMotionsResponse extends EventResponse {
+  motions: readonly Motion[];
 }
 
 export interface GetEventResponse {
-  event: EventWithVotesResponse;
+  event: EventWithMotionsResponse;
 }
 
 export interface GetEventsResponse {
@@ -20,31 +24,31 @@ export interface CreateEventRequest {
 }
 
 export interface CreateEventResponse {
-  event: EventWithVotes;
+  event: EventWithMotions;
 }
 
-export interface VoteResponse extends Vote {}
+export interface MotionResponse extends Motion {}
 
-export interface GetVoteResponse {
-  vote: VoteResponse;
+export interface GetMotionResponse {
+  motion: MotionResponse;
 }
 
-export interface GetVotesResponse {
-  votes: readonly VoteResponse[];
+export interface GetMotionsResponse {
+  motions: readonly MotionResponse[];
 }
 
-export interface CreateVoteRequest {
-  vote: Omit<BuildableVote, "eventId" | "status">;
+export interface CreateMotionRequest {
+  motion: Omit<BuildableMotion, "eventId" | "status">;
 }
 
-export interface CreateVoteResponse {
-  vote: Vote;
+export interface CreateMotionResponse {
+  motion: Motion;
 }
 
-export interface PatchVoteRequest {
-  voteUpdates: Omit<VoteUpdates, "status">;
+export interface PatchMotionRequest {
+  motionUpdates: Omit<MotionUpdates, "status">;
 }
 
-export interface PatchVoteResponse {
-  vote: Vote;
+export interface PatchMotionResponse {
+  motion: Motion;
 }

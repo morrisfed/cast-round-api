@@ -2,14 +2,14 @@ import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 
 import { FindOptions, Transaction } from "sequelize";
-import { PersistedVote } from "../db/votes";
+import { PersistedMotion } from "../db/motions";
 
-export const findPersistedVote =
+export const findPersistedMotion =
   (include: FindOptions["include"]) => (t: Transaction) => (id: number) =>
     pipe(
       TE.tryCatch(
         () =>
-          PersistedVote.findByPk(id, {
+          PersistedMotion.findByPk(id, {
             transaction: t,
             include,
           }),
@@ -18,10 +18,10 @@ export const findPersistedVote =
       TE.chainW(TE.fromNullable("not-found" as const))
     );
 
-export const savePersistedVote =
-  <T extends PersistedVote>(t: Transaction) =>
-  (vote: T) =>
+export const savePersistedMotion =
+  <T extends PersistedMotion>(t: Transaction) =>
+  (motion: T) =>
     TE.tryCatch(
-      () => vote.save({ transaction: t }),
+      () => motion.save({ transaction: t }),
       (reason) => new Error(String(reason))
     );

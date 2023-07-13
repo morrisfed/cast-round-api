@@ -9,20 +9,20 @@ import {
 } from "../user/permissions";
 import {
   findAllEvents,
-  findCurrentEventWithVotesById,
+  findCurrentEventWithMotionsById,
   findEventsByDate,
-  findEventWithVotesById,
+  findEventWithMotionsById,
   createEvent as modelCreateEvent,
 } from "../model/events";
 import {
-  findAllEventVotes,
-  findVoteById,
-  createEventVote as modelCreateEventVote,
-  updateEventVote as modelUpdateEventVote,
-} from "../model/votes";
+  findAllEventMotions,
+  findMotionById,
+  createEventMotion as modelCreateEventMotion,
+  updateEventMotion as modelUpdateEventMotion,
+} from "../model/motions";
 import transactionalTaskEither from "../model/transaction";
-import { BuildableEvent, Event, EventWithVotes } from "../interfaces/events";
-import { BuildableVote, Vote, VoteUpdates } from "../interfaces/votes";
+import { BuildableEvent, Event, EventWithMotions } from "../interfaces/events";
+import { BuildableMotion, Motion, MotionUpdates } from "../interfaces/motions";
 
 export const getEvents = (
   user: User
@@ -39,11 +39,11 @@ export const getEvents = (
 export const getEvent = (
   user: User,
   eventId: number
-): TE.TaskEither<Error | "forbidden" | "not-found", EventWithVotes> => {
+): TE.TaskEither<Error | "forbidden" | "not-found", EventWithMotions> => {
   if (hasEventsReadAllPermission(user)) {
     return transactionalTaskEither((t) =>
       pipe(
-        findEventWithVotesById(t)(eventId),
+        findEventWithMotionsById(t)(eventId),
         TE.chainW(TE.fromNullable("not-found" as const))
       )
     );
@@ -52,7 +52,7 @@ export const getEvent = (
   if (hasEventsReadCurrentPermission(user)) {
     return transactionalTaskEither((t) =>
       pipe(
-        findCurrentEventWithVotesById(t)(eventId)(new Date()),
+        findCurrentEventWithMotionsById(t)(eventId)(new Date()),
         TE.chainW(TE.fromNullable("not-found" as const))
       )
     );
@@ -70,7 +70,7 @@ export const createEvent =
   (user: User) =>
   (
     buildableEvent: BuildableEvent
-  ): TE.TaskEither<Error | "forbidden", EventWithVotes> => {
+  ): TE.TaskEither<Error | "forbidden", EventWithMotions> => {
     if (hasPermissionToCreateGroupDelegateForAccount(user)) {
       return transactionalTaskEither((t) =>
         pipe(modelCreateEvent(t)(buildableEvent))
@@ -80,49 +80,49 @@ export const createEvent =
     return TE.left("forbidden");
   };
 
-export const getEventVotes = (
+export const getEventMotions = (
   user: User,
   eventId: number
-): TE.TaskEither<Error | "not-found" | "forbidden", Vote[]> => {
+): TE.TaskEither<Error | "not-found" | "forbidden", Motion[]> => {
   if (hasEventsReadAllPermission(user)) {
-    return transactionalTaskEither((t) => findAllEventVotes(t)(eventId));
+    return transactionalTaskEither((t) => findAllEventMotions(t)(eventId));
   }
   return TE.left("forbidden");
 };
 
-export const createEventVote = (
+export const createEventMotion = (
   user: User,
   eventId: number,
-  buildableVote: BuildableVote
-): TE.TaskEither<Error | "not-found" | "forbidden", Vote> => {
+  buildableMotion: BuildableMotion
+): TE.TaskEither<Error | "not-found" | "forbidden", Motion> => {
   if (hasEventsWriteAllPermission(user)) {
     return transactionalTaskEither((t) =>
-      pipe(modelCreateEventVote(t)(buildableVote))
+      pipe(modelCreateEventMotion(t)(buildableMotion))
     );
   }
   return TE.left("forbidden");
 };
 
-export const updateEventVote = (
+export const updateEventMotion = (
   user: User,
   eventId: number,
-  voteId: number,
-  voteUpdates: VoteUpdates
-): TE.TaskEither<Error | "not-found" | "forbidden", Vote> => {
+  motionId: number,
+  motionUpdates: MotionUpdates
+): TE.TaskEither<Error | "not-found" | "forbidden", Motion> => {
   if (hasEventsWriteAllPermission(user)) {
     return transactionalTaskEither((t) =>
-      pipe(modelUpdateEventVote(t)(eventId, voteId)(voteUpdates))
+      pipe(modelUpdateEventMotion(t)(eventId, motionId)(motionUpdates))
     );
   }
   return TE.left("forbidden");
 };
 
-export const getEventVote = (
-  voteId: number
-): TE.TaskEither<Error | "not-found", Vote> =>
+export const getEventMotion = (
+  motionId: number
+): TE.TaskEither<Error | "not-found", Motion> =>
   transactionalTaskEither((t) =>
     pipe(
-      findVoteById(t)(voteId),
+      findMotionById(t)(motionId),
       TE.chainW(TE.fromNullable("not-found" as const))
     )
   );

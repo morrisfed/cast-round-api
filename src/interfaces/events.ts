@@ -1,5 +1,5 @@
 import { AccountUserDetails, LinkUserDetails } from "./users";
-import { Vote } from "./votes";
+import { Motion } from "./motions";
 
 export interface Event {
   id: number;
@@ -9,8 +9,8 @@ export interface Event {
   toDate: Date;
 }
 
-export interface EventWithVotes extends Event {
-  votes: readonly Vote[];
+export interface EventWithMotions extends Event {
+  motions: readonly Motion[];
 }
 
 export interface BuildableEvent extends Omit<Event, "id"> {}

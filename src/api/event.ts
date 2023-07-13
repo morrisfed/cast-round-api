@@ -13,20 +13,20 @@ import { standardJsonResponseFold } from "./utils";
 import logger from "../utils/logging";
 
 import {
-  createEventVote,
+  createEventMotion,
   getEvent,
-  getEventVote,
-  getEventVotes,
-  updateEventVote,
+  getEventMotion,
+  getEventMotions,
+  updateEventMotion,
 } from "../events";
 import {
-  CreateVoteRequest,
-  CreateVoteResponse,
+  CreateMotionRequest,
+  CreateMotionResponse,
   GetEventResponse,
-  GetVoteResponse,
-  GetVotesResponse,
-  PatchVoteRequest,
-  PatchVoteResponse,
+  GetMotionResponse,
+  GetMotionsResponse,
+  PatchMotionRequest,
+  PatchMotionResponse,
 } from "./interfaces/EventApi";
 import { getEventGroupDelegate } from "../delegates";
 import { GroupDelegateResponse } from "./interfaces/DelegateApi";
@@ -44,11 +44,11 @@ const EventIdAndTellorIdObject = t.strict({
 });
 type EventIdAndTellorIdObject = t.TypeOf<typeof EventIdAndTellorIdObject>;
 
-const EventIdAndVoteIdObject = t.strict({
+const EventIdAndMotionIdObject = t.strict({
   eventId: IntFromString,
-  voteId: IntFromString,
+  motionId: IntFromString,
 });
-type EventIdAndVoteIdObject = t.TypeOf<typeof EventIdAndVoteIdObject>;
+type EventIdAndMotionIdObject = t.TypeOf<typeof EventIdAndMotionIdObject>;
 
 export const eventRouter = express.Router({ mergeParams: true });
 
@@ -69,22 +69,25 @@ eventRouter.get<EventIdObject, GetEventResponse>("/", async (req, res) => {
   }
 });
 
-eventRouter.get<EventIdObject, GetVotesResponse>("/votes", async (req, res) => {
-  if (req.isAuthenticated()) {
-    const getEventVotesResponseTask = pipe(
-      EventIdObject.decode(req.params),
-      E.mapLeft(() => "bad-request" as const),
-      TE.fromEither,
-      TE.chainW(({ eventId }) => getEventVotes(req.user, eventId)),
-      TE.map((votes) => ({ votes })),
-      standardJsonResponseFold(res)
-    );
+eventRouter.get<EventIdObject, GetMotionsResponse>(
+  "/motions",
+  async (req, res) => {
+    if (req.isAuthenticated()) {
+      const getEventMotionsResponseTask = pipe(
+        EventIdObject.decode(req.params),
+        E.mapLeft(() => "bad-request" as const),
+        TE.fromEither,
+        TE.chainW(({ eventId }) => getEventMotions(req.user, eventId)),
+        TE.map((motions) => ({ motions })),
+        standardJsonResponseFold(res)
+      );
 
-    await getEventVotesResponseTask();
-  } else {
-    throw new Error();
+      await getEventMotionsResponseTask();
+    } else {
+      throw new Error();
+    }
   }
-});
+);
 
 eventRouter.get<EventIdObject, GroupDelegateResponse>(
   "/groupdelegate",
@@ -161,17 +164,17 @@ eventRouter.delete<EventIdAndTellorIdObject>(
   }
 );
 
-eventRouter.post<EventIdObject, CreateVoteResponse, CreateVoteRequest>(
-  "/votes",
+eventRouter.post<EventIdObject, CreateMotionResponse, CreateMotionRequest>(
+  "/motions",
   async (req, res) => {
     if (req.isAuthenticated()) {
-      const createVoteResponseTask = pipe(
+      const createMotionResponseTask = pipe(
         EventIdObject.decode(req.params),
         E.mapLeft(() => "bad-request"),
         TE.fromEither,
         TE.chainW(({ eventId }) =>
-          createEventVote(req.user, req.params.eventId, {
-            ...req.body.vote,
+          createEventMotion(req.user, req.params.eventId, {
+            ...req.body.motion,
             eventId,
             status: "draft",
           })
@@ -186,70 +189,71 @@ eventRouter.post<EventIdObject, CreateVoteResponse, CreateVoteRequest>(
             }
             return T.of(undefined);
           },
-          (vote) => {
-            res.json({ vote });
+          (motion) => {
+            res.json({ motion });
             return T.of(undefined);
           }
         )
       );
 
-      await createVoteResponseTask();
+      await createMotionResponseTask();
     } else {
       throw new Error();
     }
   }
 );
 
-eventRouter.patch<EventIdAndVoteIdObject, PatchVoteResponse, PatchVoteRequest>(
-  "/votes/:voteId",
-  async (req, res) => {
-    if (req.isAuthenticated()) {
-      const updateVoteResponseTask = pipe(
-        EventIdAndVoteIdObject.decode(req.params),
-        E.mapLeft(() => "bad-request"),
-        TE.fromEither,
-        TE.chainW(({ eventId, voteId }) =>
-          updateEventVote(req.user, eventId, voteId, req.body.voteUpdates)
-        ),
-        TE.fold(
-          (err) => {
-            if (err === "forbidden") {
-              res.sendStatus(403);
-            } else if (err === "not-found") {
-              res.sendStatus(404);
-            } else if (err === "bad-request") {
-              res.sendStatus(400);
-            } else {
-              res.sendStatus(500);
-              logger.error(err);
-            }
-            return T.of(undefined);
-          },
-          (vote) => {
-            res.json({ vote });
-            return T.of(undefined);
+eventRouter.patch<
+  EventIdAndMotionIdObject,
+  PatchMotionResponse,
+  PatchMotionRequest
+>("/motions/:motionId", async (req, res) => {
+  if (req.isAuthenticated()) {
+    const updateMotionResponseTask = pipe(
+      EventIdAndMotionIdObject.decode(req.params),
+      E.mapLeft(() => "bad-request"),
+      TE.fromEither,
+      TE.chainW(({ eventId, motionId }) =>
+        updateEventMotion(req.user, eventId, motionId, req.body.motionUpdates)
+      ),
+      TE.fold(
+        (err) => {
+          if (err === "forbidden") {
+            res.sendStatus(403);
+          } else if (err === "not-found") {
+            res.sendStatus(404);
+          } else if (err === "bad-request") {
+            res.sendStatus(400);
+          } else {
+            res.sendStatus(500);
+            logger.error(err);
           }
-        )
-      );
+          return T.of(undefined);
+        },
+        (motion) => {
+          res.json({ motion });
+          return T.of(undefined);
+        }
+      )
+    );
 
-      await updateVoteResponseTask();
-    } else {
-      throw new Error();
-    }
+    await updateMotionResponseTask();
+  } else {
+    throw new Error();
   }
-);
+});
 
-eventRouter.get<{ eventId: number; voteId: number }, GetVoteResponse>(
-  "/votes/:voteId",
+eventRouter.get<{ eventId: number; motionId: number }, GetMotionResponse>(
+  "/motions/:motionId",
   async (req, res) => {
     if (req.isAuthenticated()) {
-      const getEventVoteResponseTask = pipe(
-        getEventVote(req.params.voteId),
-        TE.map((vote) => ({ vote })),
+      const getEventMotionResponseTask = pipe(
+        getEventMotion(req.params.motionId),
+        TE.map((motion) => ({ motion })),
         standardJsonResponseFold(res)
       );
 
-      await getEventVoteResponseTask();
+      await getEventMotionResponseTask();
     } else {
       throw new Error();
     }

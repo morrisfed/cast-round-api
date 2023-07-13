@@ -8,14 +8,14 @@ import {
   NonAttribute,
   Sequelize,
 } from "sequelize";
-import { Vote, VoteStatus } from "../../interfaces/votes";
+import { Motion, MotionStatus } from "../../interfaces/motions";
 
-export class PersistedVote
+export class PersistedMotion
   extends Model<
-    InferAttributes<PersistedVote>,
-    InferCreationAttributes<PersistedVote>
+    InferAttributes<PersistedMotion>,
+    InferCreationAttributes<PersistedMotion>
   >
-  implements Vote
+  implements Motion
 {
   declare id: NonAttribute<number>;
 
@@ -25,11 +25,11 @@ export class PersistedVote
 
   declare description: string;
 
-  declare status: VoteStatus;
+  declare status: MotionStatus;
 }
 
-const initVoteModel = (sequelize: Sequelize) =>
-  PersistedVote.init(
+const initMotionModel = (sequelize: Sequelize) =>
+  PersistedMotion.init(
     {
       eventId: { type: DataTypes.INTEGER, allowNull: false },
       title: {
@@ -47,10 +47,10 @@ const initVoteModel = (sequelize: Sequelize) =>
     },
     {
       sequelize,
-      modelName: "Vote",
+      modelName: "Motion",
     }
   );
 
-export const initVote = (sequelize: Sequelize) => {
-  initVoteModel(sequelize);
+export const initMotion = (sequelize: Sequelize) => {
+  initMotionModel(sequelize);
 };

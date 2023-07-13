@@ -7,7 +7,7 @@ import {
   initUser,
 } from "./users";
 import { PersistedEvent, initEvent } from "./events";
-import { PersistedVote, initVote } from "./votes";
+import { PersistedMotion, initMotion } from "./motions";
 import {
   PersistedEventGroupDelegate,
   initEventGroupDelegate,
@@ -29,7 +29,7 @@ const sequelize = new Sequelize(
 export const initDb = async () => {
   initUser(sequelize);
   initEvent(sequelize);
-  initVote(sequelize);
+  initMotion(sequelize);
   initEventGroupDelegate(sequelize);
   initEventTellor(sequelize);
 
@@ -42,11 +42,11 @@ export const initDb = async () => {
     as: "assignedEvents",
   });
 
-  PersistedEvent.hasMany(PersistedVote, {
-    as: "votes",
+  PersistedEvent.hasMany(PersistedMotion, {
+    as: "motions",
     foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
   });
-  PersistedVote.belongsTo(PersistedEvent, {
+  PersistedMotion.belongsTo(PersistedEvent, {
     as: "event",
     foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
   });
