@@ -13,6 +13,7 @@ import {
   findEventsByDate,
   findEventWithMotionsById,
   createEvent as modelCreateEvent,
+  updateEvent as modelUpdateEvent,
 } from "../model/events";
 import {
   findAllEventMotions,
@@ -21,7 +22,12 @@ import {
   updateEventMotion as modelUpdateEventMotion,
 } from "../model/motions";
 import transactionalTaskEither from "../model/transaction";
-import { BuildableEvent, Event, EventWithMotions } from "../interfaces/events";
+import {
+  BuildableEvent,
+  Event,
+  EventUpdates,
+  EventWithMotions,
+} from "../interfaces/events";
 import { BuildableMotion, Motion, MotionUpdates } from "../interfaces/motions";
 
 export const getEvents = (
@@ -79,6 +85,19 @@ export const createEvent =
 
     return TE.left("forbidden");
   };
+
+export const updateEvent = (
+  user: User,
+  eventId: number,
+  eventUpdates: EventUpdates
+): TE.TaskEither<Error | "not-found" | "forbidden", Event> => {
+  if (hasEventsWriteAllPermission(user)) {
+    return transactionalTaskEither((t) =>
+      pipe(modelUpdateEvent(t)(eventId, eventUpdates))
+    );
+  }
+  return TE.left("forbidden");
+};
 
 export const getEventMotions = (
   user: User,

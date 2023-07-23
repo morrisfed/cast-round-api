@@ -1,4 +1,4 @@
-import { Event, EventWithMotions } from "../../interfaces/events";
+import { Event, EventUpdates, EventWithMotions } from "../../interfaces/events";
 import {
   BuildableMotion,
   Motion,
@@ -25,6 +25,14 @@ export interface CreateEventRequest {
 
 export interface CreateEventResponse {
   event: EventWithMotions;
+}
+
+export interface PatchEventRequest {
+  eventUpdates: EventUpdates;
+}
+
+export interface PatchEventResponse {
+  event: Event;
 }
 
 export interface MotionResponse extends Motion {}

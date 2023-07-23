@@ -4,7 +4,12 @@ import * as TE from "fp-ts/lib/TaskEither";
 
 import { Op, Transaction } from "sequelize";
 
-import { BuildableEvent, Event, EventWithMotions } from "../interfaces/events";
+import {
+  BuildableEvent,
+  Event,
+  EventUpdates,
+  EventWithMotions,
+} from "../interfaces/events";
 import { PersistedEvent } from "./db/events";
 import { findPersistedEvent } from "./_internal/event";
 import { PersistedMotion } from "./db/motions";
@@ -114,7 +119,7 @@ export const createEvent =
     );
 
 const applyUpdatesToEvent =
-  (updates: Partial<Event>) =>
+  (updates: EventUpdates) =>
   (event: PersistedEvent): PersistedEvent =>
     event.set(updates);
 
@@ -122,7 +127,7 @@ export const updateEvent =
   (t: Transaction) =>
   (
     eventId: number,
-    updates: Partial<Event>
+    updates: EventUpdates
   ): TE.TaskEither<Error | "not-found", Event> =>
     pipe(
       findPersistedEvent([])(t)(eventId),

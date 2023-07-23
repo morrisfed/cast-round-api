@@ -17,6 +17,7 @@ import {
   getEvent,
   getEventMotion,
   getEventMotions,
+  updateEvent,
   updateEventMotion,
 } from "../events";
 import {
@@ -25,6 +26,8 @@ import {
   GetEventResponse,
   GetMotionResponse,
   GetMotionsResponse,
+  PatchEventRequest,
+  PatchEventResponse,
   PatchMotionRequest,
   PatchMotionResponse,
 } from "./interfaces/EventApi";
@@ -68,6 +71,45 @@ eventRouter.get<EventIdObject, GetEventResponse>("/", async (req, res) => {
     throw new Error();
   }
 });
+
+eventRouter.patch<EventIdObject, PatchEventResponse, PatchEventRequest>(
+  "/",
+  async (req, res) => {
+    if (req.isAuthenticated()) {
+      const updateEventResponseTask = pipe(
+        EventIdObject.decode(req.params),
+        E.mapLeft(() => "bad-request"),
+        TE.fromEither,
+        TE.chainW(({ eventId }) =>
+          updateEvent(req.user, eventId, req.body.eventUpdates)
+        ),
+        TE.fold(
+          (err) => {
+            if (err === "forbidden") {
+              res.sendStatus(403);
+            } else if (err === "not-found") {
+              res.sendStatus(404);
+            } else if (err === "bad-request") {
+              res.sendStatus(400);
+            } else {
+              res.sendStatus(500);
+              logger.error(err);
+            }
+            return T.of(undefined);
+          },
+          (event) => {
+            res.json({ event });
+            return T.of(undefined);
+          }
+        )
+      );
+
+      await updateEventResponseTask();
+    } else {
+      throw new Error();
+    }
+  }
+);
 
 eventRouter.get<EventIdObject, GetMotionsResponse>(
   "/motions",

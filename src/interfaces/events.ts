@@ -27,3 +27,5 @@ export interface EventGroupDelegate {
 
 export interface BuildableEventGroupDelegate
   extends Omit<EventGroupDelegate, "event" | "delegateUser" | "delegateFor"> {}
+
+export interface EventUpdates extends Partial<BuildableEvent> {}
