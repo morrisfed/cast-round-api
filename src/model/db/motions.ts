@@ -8,14 +8,15 @@ import {
   NonAttribute,
   Sequelize,
 } from "sequelize";
-import { Motion, MotionStatus } from "../../interfaces/motions";
+
+import { ModelMotion, ModelMotionStatus } from "../interfaces/model-motions";
 
 export class PersistedMotion
   extends Model<
     InferAttributes<PersistedMotion>,
     InferCreationAttributes<PersistedMotion>
   >
-  implements Motion
+  implements ModelMotion
 {
   declare id: NonAttribute<number>;
 
@@ -25,7 +26,7 @@ export class PersistedMotion
 
   declare description: string;
 
-  declare status: MotionStatus;
+  declare status: ModelMotionStatus;
 }
 
 const initMotionModel = (sequelize: Sequelize) =>

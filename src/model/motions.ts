@@ -3,13 +3,17 @@ import * as TE from "fp-ts/lib/TaskEither";
 
 import { Transaction } from "sequelize";
 import { findPersistedEvent } from "./_internal/event";
-import { BuildableMotion, Motion, MotionUpdates } from "../interfaces/motions";
 import { PersistedMotion } from "./db/motions";
 import { findPersistedMotion, savePersistedMotion } from "./_internal/motion";
+import {
+  ModelBuildableMotion,
+  ModelMotion,
+  ModelMotionUpdates,
+} from "./interfaces/model-motions";
 
 export const findAllEventMotions =
   (t: Transaction) =>
-  (eventId: number): TE.TaskEither<Error | "not-found", Motion[]> =>
+  (eventId: number): TE.TaskEither<Error | "not-found", ModelMotion[]> =>
     pipe(
       findPersistedEvent(["motions"])(t)(eventId),
       TE.map((event) => event.motions || [])
@@ -17,12 +21,12 @@ export const findAllEventMotions =
 
 export const findMotionById =
   (t: Transaction) =>
-  (id: number): TE.TaskEither<Error | "not-found", Motion> =>
+  (id: number): TE.TaskEither<Error | "not-found", ModelMotion> =>
     findPersistedMotion([])(t)(id);
 
 export const createEventMotion =
   (t: Transaction) =>
-  (buildableMotion: BuildableMotion): TE.TaskEither<Error, Motion> =>
+  (buildableMotion: ModelBuildableMotion): TE.TaskEither<Error, ModelMotion> =>
     pipe(
       TE.tryCatch(
         () =>
@@ -42,14 +46,16 @@ export const createEventMotion =
     );
 
 const applyUpdatesToMotion =
-  (updates: MotionUpdates) =>
+  (updates: ModelMotionUpdates) =>
   (motion: PersistedMotion): PersistedMotion =>
     motion.set(updates);
 
 export const updateEventMotion =
   (t: Transaction) =>
   (eventId: number, motionId: number) =>
-  (updates: MotionUpdates): TE.TaskEither<Error | "not-found", Motion> =>
+  (
+    updates: ModelMotionUpdates
+  ): TE.TaskEither<Error | "not-found", ModelMotion> =>
     pipe(
       findPersistedMotion([])(t)(motionId),
       TE.chainW(

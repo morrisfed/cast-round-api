@@ -28,7 +28,12 @@ import {
   EventUpdates,
   EventWithMotions,
 } from "../interfaces/events";
-import { BuildableMotion, Motion, MotionUpdates } from "../interfaces/motions";
+import {
+  BuildableMotion,
+  Motion,
+  MotionStatus,
+  MotionUpdates,
+} from "../interfaces/motions";
 
 export const getEvents = (
   user: User
@@ -116,7 +121,14 @@ export const createEventMotion = (
 ): TE.TaskEither<Error | "not-found" | "forbidden", Motion> => {
   if (hasEventsWriteAllPermission(user)) {
     return transactionalTaskEither((t) =>
-      pipe(modelCreateEventMotion(t)(buildableMotion))
+      pipe(
+        modelCreateEventMotion(t)({
+          title: buildableMotion.title,
+          description: buildableMotion.description,
+          eventId,
+          status: "draft",
+        })
+      )
     );
   }
   return TE.left("forbidden");
@@ -131,6 +143,24 @@ export const updateEventMotion = (
   if (hasEventsWriteAllPermission(user)) {
     return transactionalTaskEither((t) =>
       pipe(modelUpdateEventMotion(t)(eventId, motionId)(motionUpdates))
+    );
+  }
+  return TE.left("forbidden");
+};
+
+export const setEventMotionStatus = (
+  user: User,
+  eventId: number,
+  motionId: number,
+  status: MotionStatus
+): TE.TaskEither<Error | "not-found" | "forbidden", Motion> => {
+  if (hasEventsWriteAllPermission(user)) {
+    return transactionalTaskEither((t) =>
+      pipe(
+        modelUpdateEventMotion(t)(eventId, motionId)({
+          status,
+        })
+      )
     );
   }
   return TE.left("forbidden");

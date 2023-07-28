@@ -17,6 +17,7 @@ import {
   getEvent,
   getEventMotion,
   getEventMotions,
+  setEventMotionStatus,
   updateEvent,
   updateEventMotion,
 } from "../events";
@@ -30,6 +31,8 @@ import {
   PatchEventResponse,
   PatchMotionRequest,
   PatchMotionResponse,
+  SetMotionStatusRequest,
+  SetMotionStatusResponse,
 } from "./interfaces/EventApi";
 import { getEventGroupDelegate } from "../delegates";
 import { GroupDelegateResponse } from "./interfaces/DelegateApi";
@@ -218,7 +221,6 @@ eventRouter.post<EventIdObject, CreateMotionResponse, CreateMotionRequest>(
           createEventMotion(req.user, req.params.eventId, {
             ...req.body.motion,
             eventId,
-            status: "draft",
           })
         ),
         TE.fold(
@@ -280,6 +282,53 @@ eventRouter.patch<
     );
 
     await updateMotionResponseTask();
+  } else {
+    throw new Error();
+  }
+});
+
+eventRouter.post<
+  EventIdAndMotionIdObject,
+  SetMotionStatusResponse,
+  SetMotionStatusRequest
+>("/motions/:motionId/status", async (req, res) => {
+  if (req.isAuthenticated()) {
+    const setMotionStatusResponseTask = pipe(
+      E.Do,
+      E.bind("ids", () => EventIdAndMotionIdObject.decode(req.params)),
+      E.bind("statusRequest", () => SetMotionStatusRequest.decode(req.body)),
+      E.mapLeft(() => "bad-request"),
+      TE.fromEither,
+      TE.chainW(({ ids, statusRequest }) =>
+        setEventMotionStatus(
+          req.user,
+          ids.eventId,
+          ids.motionId,
+          statusRequest.status
+        )
+      ),
+      TE.fold(
+        (err) => {
+          if (err === "forbidden") {
+            res.sendStatus(403);
+          } else if (err === "not-found") {
+            res.sendStatus(404);
+          } else if (err === "bad-request") {
+            res.sendStatus(400);
+          } else {
+            res.sendStatus(500);
+            logger.error(err);
+          }
+          return T.of(undefined);
+        },
+        (motion) => {
+          res.json({ status: motion.status });
+          return T.of(undefined);
+        }
+      )
+    );
+
+    await setMotionStatusResponseTask();
   } else {
     throw new Error();
   }

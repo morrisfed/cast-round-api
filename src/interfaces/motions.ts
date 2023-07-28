@@ -1,20 +1,13 @@
-export type MotionStatus =
-  | "draft"
-  | "proxy"
-  | "open"
-  | "closed"
-  | "cancelled"
-  | "abandoned";
+import {
+  ModelMotion,
+  ModelMotionStatus,
+} from "../model/interfaces/model-motions";
 
-export interface Motion {
-  id: number;
-  eventId: number;
-  status: MotionStatus;
-  title: string;
-  description: string;
-}
+export type MotionStatus = ModelMotionStatus;
 
-export interface BuildableMotion extends Omit<Motion, "id"> {}
+export interface Motion extends ModelMotion {}
+
+export interface BuildableMotion extends Omit<Motion, "id" | "status"> {}
 
 export interface MotionUpdates
   extends Partial<Omit<BuildableMotion, "eventId">> {}

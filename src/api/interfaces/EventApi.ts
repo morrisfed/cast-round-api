@@ -1,7 +1,10 @@
+import * as t from "io-ts";
+
 import { Event, EventUpdates, EventWithMotions } from "../../interfaces/events";
 import {
   BuildableMotion,
   Motion,
+  MotionStatus,
   MotionUpdates,
 } from "../../interfaces/motions";
 
@@ -59,4 +62,22 @@ export interface PatchMotionRequest {
 
 export interface PatchMotionResponse {
   motion: Motion;
+}
+
+const MotionStatusRequest = t.union([
+  t.literal("draft"),
+  t.literal("proxy"),
+  t.literal("open"),
+  t.literal("closed"),
+  t.literal("cancelled"),
+  t.literal("discarded"),
+]);
+
+export const SetMotionStatusRequest = t.strict({
+  status: MotionStatusRequest,
+});
+export type SetMotionStatusRequest = t.TypeOf<typeof SetMotionStatusRequest>;
+
+export interface SetMotionStatusResponse {
+  status: MotionStatus;
 }
