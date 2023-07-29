@@ -1,11 +1,13 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as ROA from "fp-ts/lib/ReadonlyArray";
 
 import { User } from "../interfaces/users";
 import {
   hasEventsReadAllPermission,
   hasEventsReadCurrentPermission,
   hasEventsWriteAllPermission,
+  hasMotionsReadAllPermission,
 } from "../user/permissions";
 import {
   findAllEvents,
@@ -34,6 +36,10 @@ import {
   MotionStatus,
   MotionUpdates,
 } from "../interfaces/motions";
+
+const showMotionForUser = (user: User) => (motion: Motion) =>
+  hasMotionsReadAllPermission(user) ||
+  (motion.status !== "draft" && motion.status !== "discarded");
 
 export const getEvents = (
   user: User
@@ -64,7 +70,11 @@ export const getEvent = (
     return transactionalTaskEither((t) =>
       pipe(
         findCurrentEventWithMotionsById(t)(eventId)(new Date()),
-        TE.chainW(TE.fromNullable("not-found" as const))
+        TE.chainW(TE.fromNullable("not-found" as const)),
+        TE.map((event) => ({
+          ...event,
+          motions: ROA.filter(showMotionForUser(user))(event.motions),
+        }))
       )
     );
   }

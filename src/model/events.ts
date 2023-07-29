@@ -1,6 +1,7 @@
 import { pipe } from "fp-ts/lib/function";
 import { Refinement } from "fp-ts/lib/Refinement";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as A from "fp-ts/lib/Array";
 
 import { Op, Transaction } from "sequelize";
 
@@ -13,6 +14,7 @@ import {
 import { PersistedEvent } from "./db/events";
 import { findPersistedEvent } from "./_internal/event";
 import { PersistedMotion } from "./db/motions";
+import { Motion } from "../interfaces/motions";
 
 interface PersistedEventWithMotions extends PersistedEvent {
   motions: PersistedMotion[];
@@ -62,6 +64,25 @@ export const findEventWithMotionsById =
       )
     );
 
+const mapPersistedMotionToMotion = (pm: PersistedMotion): Motion => ({
+  id: pm.id,
+  eventId: pm.eventId,
+  title: pm.title,
+  description: pm.description,
+  status: pm.status,
+});
+
+const mapPersistedEventWithMotionsToEventWithMotions = (
+  pewm: PersistedEventWithMotions
+): EventWithMotions => ({
+  id: pewm.id,
+  name: pewm.name,
+  description: pewm.description,
+  fromDate: pewm.fromDate,
+  toDate: pewm.toDate,
+  motions: A.map(mapPersistedMotionToMotion)(pewm.motions),
+});
+
 export const findCurrentEventWithMotionsById =
   (t: Transaction) =>
   (id: number) =>
@@ -74,7 +95,8 @@ export const findCurrentEventWithMotionsById =
           () => new Error(`Data error: event ${id} has no motions`)
         )
       ),
-      TE.filterOrElseW(isCurrentEvent(date), () => "not-found" as const)
+      TE.filterOrElseW(isCurrentEvent(date), () => "not-found" as const),
+      TE.map(mapPersistedEventWithMotionsToEventWithMotions)
     );
 
 const savePersistedEvent =

@@ -25,7 +25,8 @@ export type Permission =
   | "EVENTS_READ_OWN"
   | "EVENTS_READ_UNASSIGNED"
   | "EVENTS_READWRITE_ALL"
-  | "TELLORS_READWRITE";
+  | "TELLORS_READWRITE"
+  | "MOTIONS_READ_ALL";
 
 export type Role =
   | "ADMINISTRATOR"
@@ -42,7 +43,12 @@ export type Role =
 
 const rolePermissions: Record<Role, Array<Permission>> = {
   ADMINISTRATOR: ["IMPORT_ACCOUNTS_CSV", "ACCOUNTS_READ_ALL"],
-  COMMITTEE: ["ACCOUNTS_READ_ALL", "EVENTS_READWRITE_ALL", "TELLORS_READWRITE"],
+  COMMITTEE: [
+    "ACCOUNTS_READ_ALL",
+    "EVENTS_READWRITE_ALL",
+    "TELLORS_READWRITE",
+    "MOTIONS_READ_ALL",
+  ],
   MEMBER: ["EVENTS_READ_CURRENT"],
   GROUP_MEMBER: ["GROUP_DELEGATES_READWRITE_OWN"],
   INDIVIDUAL_MEMBER: [],
@@ -70,6 +76,7 @@ const transitivePermissions: Record<Permission, Array<Permission>> = {
   EVENTS_READWRITE_ALL: ["EVENTS_READ_ALL"],
   EVENTS_READ_CURRENT: [],
   TELLORS_READWRITE: [],
+  MOTIONS_READ_ALL: [],
 };
 
 const permissionEq = E.fromEquals<Permission>((x, y) => x === y);
@@ -183,3 +190,6 @@ export const hasEventsReadCurrentPermission = (user: User | undefined) =>
 
 export const hasEventsWriteAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READWRITE_ALL");
+
+export const hasMotionsReadAllPermission = (user: User | undefined) =>
+  hasPermission(user, "MOTIONS_READ_ALL");
