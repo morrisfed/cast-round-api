@@ -4,7 +4,7 @@ import * as IOE from "fp-ts/lib/IOEither";
 import * as A from "fp-ts/lib/Array";
 
 import { Transaction } from "sequelize";
-import { PersistedAccountUser, PersistedUser } from "./db/users";
+import { PersistedAccountUserDetails, PersistedUser } from "./db/users";
 
 import {
   findPersistedUserWithAccountAndAccountLinksById,
@@ -24,16 +24,18 @@ import {
 import { decodePersistedIOE } from "./_internal/utils";
 
 const persistedAccountUserDetailsAsModelAccountUserDetails = (
-  persistedAccountUser: PersistedAccountUser
+  persistedAccountUser: PersistedAccountUserDetails
 ): IOE.IOEither<Error, ModelAccountUserDetails> =>
-  decodePersistedIOE<PersistedAccountUser, ModelAccountUserDetails, Error>(
-    ModelAccountUserDetails
-  )(() => new Error("Invalid user info read from database"))(
-    persistedAccountUser
-  );
+  decodePersistedIOE<
+    PersistedAccountUserDetails,
+    ModelAccountUserDetails,
+    Error
+  >(ModelAccountUserDetails)(
+    () => new Error("Invalid user info read from database")
+  )(persistedAccountUser);
 
 const persistedAccountUserDetailsArrayAsModelAccountUserDetailsArray = (
-  persistedAccountUsers: PersistedAccountUser[]
+  persistedAccountUsers: PersistedAccountUserDetails[]
 ): IOE.IOEither<Error, ModelAccountUserDetails[]> =>
   pipe(
     persistedAccountUsers,
@@ -67,7 +69,7 @@ export const findAllAccounts = (
 ): TE.TaskEither<Error, ModelAccountUserDetails[]> =>
   pipe(
     TE.tryCatch(
-      () => PersistedAccountUser.findAll({ transaction: t }),
+      () => PersistedAccountUserDetails.findAll({ transaction: t }),
       (reason) => new Error(String(reason))
     ),
     TE.chainIOEitherKW(
@@ -137,16 +139,17 @@ const applyUpdatesToPersistedAccountUser =
   (user: PersistedUserWithAccount): PersistedUserWithAccount =>
     user.set(updates);
 
-const savePersistedAccount = (t: Transaction) => (pa: PersistedAccountUser) =>
-  TE.tryCatch(
-    () => pa.save({ transaction: t }),
-    (reason) => new Error(String(reason))
-  );
+const savePersistedAccount =
+  (t: Transaction) => (pa: PersistedAccountUserDetails) =>
+    TE.tryCatch(
+      () => pa.save({ transaction: t }),
+      (reason) => new Error(String(reason))
+    );
 
 const applyAndSaveUpdateToPersistedAccountUserDetails =
   (t: Transaction) =>
   (updates: ModelAccountUserDetailsUpdates | undefined) =>
-  (pa: PersistedAccountUser) =>
+  (pa: PersistedAccountUserDetails) =>
     pipe(pa.set(updates ?? {}), savePersistedAccount(t));
 
 export const updateUserWithAccount =

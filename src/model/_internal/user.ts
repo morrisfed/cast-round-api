@@ -4,8 +4,8 @@ import { Refinement } from "fp-ts/lib/Refinement";
 
 import { FindOptions, Transaction } from "sequelize";
 import {
-  PersistedAccountUser,
-  PersistedLinkUser,
+  PersistedAccountUserDetails,
+  PersistedLinkUserDetails,
   PersistedUser,
 } from "../db/users";
 
@@ -39,11 +39,11 @@ export const deletePersistedUser = (t: Transaction) => (id: string) =>
 
 export interface PersistedUserWithAccount extends PersistedUser {
   source: "account";
-  account: PersistedAccountUser;
+  account: PersistedAccountUserDetails;
 }
 
-interface PersistedAccountWithLinks extends PersistedAccountUser {
-  links: PersistedLinkUser[];
+interface PersistedAccountWithLinks extends PersistedAccountUserDetails {
+  links: PersistedLinkUserDetails[];
 }
 
 interface PersistedUserWithAccountAndAccountLinks
@@ -79,9 +79,9 @@ export const findPersistedUserWithAccountAndAccountLinksById =
     pipe(
       findPersistedUser([
         {
-          model: PersistedAccountUser,
+          model: PersistedAccountUserDetails,
           as: "account",
-          include: [{ model: PersistedLinkUser, as: "links" }],
+          include: [{ model: PersistedLinkUserDetails, as: "links" }],
         },
       ])(t)(id),
       TE.chainW(

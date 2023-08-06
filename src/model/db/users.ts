@@ -37,19 +37,19 @@ export class PersistedUser
 
   declare updatedAt: CreationOptional<Date>;
 
-  declare account?: InferAttributes<PersistedAccountUser>;
+  declare account?: InferAttributes<PersistedAccountUserDetails>;
 
   declare link?: DbLinkUserDetailsNoExpansion;
 
-  declare createAccount: HasOneCreateAssociationMixin<PersistedAccountUser>;
+  declare createAccount: HasOneCreateAssociationMixin<PersistedAccountUserDetails>;
 
-  declare createLink: HasOneCreateAssociationMixin<PersistedLinkUser>;
+  declare createLink: HasOneCreateAssociationMixin<PersistedLinkUserDetails>;
 }
 
-export class PersistedAccountUser
+export class PersistedAccountUserDetails
   extends Model<
-    InferAttributes<PersistedAccountUser>,
-    InferCreationAttributes<PersistedAccountUser>
+    InferAttributes<PersistedAccountUserDetails>,
+    InferCreationAttributes<PersistedAccountUserDetails>
   >
   implements DbAccountUserDetails
 {
@@ -67,15 +67,15 @@ export class PersistedAccountUser
 
   declare updatedAt: CreationOptional<Date>;
 
-  declare links: NonAttribute<PersistedLinkUser[]>;
+  declare links: NonAttribute<PersistedLinkUserDetails[]>;
 
-  declare createLink: HasManyCreateAssociationMixin<PersistedLinkUser>;
+  declare createLink: HasManyCreateAssociationMixin<PersistedLinkUserDetails>;
 }
 
-export class PersistedLinkUser
+export class PersistedLinkUserDetails
   extends Model<
-    InferAttributes<PersistedLinkUser>,
-    InferCreationAttributes<PersistedLinkUser>
+    InferAttributes<PersistedLinkUserDetails>,
+    InferCreationAttributes<PersistedLinkUserDetails>
   >
   implements DbLinkUserDetails
 {
@@ -95,13 +95,16 @@ export class PersistedLinkUser
 
   declare createdBy: NonAttribute<PersistedUser>;
 
-  declare linkFor: NonAttribute<PersistedAccountUser>;
+  declare linkFor: NonAttribute<PersistedAccountUserDetails>;
 
-  declare setLinkFor: HasOneSetAssociationMixin<PersistedAccountUser, string>;
+  declare setLinkFor: HasOneSetAssociationMixin<
+    PersistedAccountUserDetails,
+    string
+  >;
 }
 
 export const initLinkUser = (sequelize: Sequelize) =>
-  PersistedLinkUser.init(
+  PersistedLinkUserDetails.init(
     {
       id: { type: DataTypes.STRING, allowNull: false, primaryKey: true },
       label: {
@@ -119,12 +122,12 @@ export const initLinkUser = (sequelize: Sequelize) =>
     },
     {
       sequelize,
-      modelName: "LinkUser",
+      modelName: "LinkUserDetails",
     }
   );
 
 export const initAccountUser = (sequelize: Sequelize) =>
-  PersistedAccountUser.init(
+  PersistedAccountUserDetails.init(
     {
       id: { type: DataTypes.STRING, allowNull: false, primaryKey: true },
       name: {
@@ -146,7 +149,7 @@ export const initAccountUser = (sequelize: Sequelize) =>
     },
     {
       sequelize,
-      modelName: "AccountUser",
+      modelName: "AccountUserDetails",
     }
   );
 
@@ -179,25 +182,25 @@ export const initUser = (sequelize: Sequelize) => {
   initAccountUser(sequelize);
   initLinkUser(sequelize);
 
-  PersistedUser.hasOne(PersistedAccountUser, {
+  PersistedUser.hasOne(PersistedAccountUserDetails, {
     as: "account",
     foreignKey: { allowNull: false, field: "id", name: "id" },
   });
-  PersistedAccountUser.belongsTo(PersistedUser, {
+  PersistedAccountUserDetails.belongsTo(PersistedUser, {
     as: "user",
     foreignKey: { allowNull: false, field: "id", name: "id" },
   });
 
-  PersistedUser.hasOne(PersistedLinkUser, {
+  PersistedUser.hasOne(PersistedLinkUserDetails, {
     as: "link",
     foreignKey: { allowNull: false, field: "id", name: "id" },
   });
-  PersistedLinkUser.belongsTo(PersistedUser, {
+  PersistedLinkUserDetails.belongsTo(PersistedUser, {
     as: "user",
     foreignKey: { allowNull: false, field: "id", name: "id" },
   });
 
-  PersistedUser.hasMany(PersistedLinkUser, {
+  PersistedUser.hasMany(PersistedLinkUserDetails, {
     as: "createdLinks",
     foreignKey: {
       allowNull: false,
@@ -205,7 +208,7 @@ export const initUser = (sequelize: Sequelize) => {
       name: "createdByUserId",
     },
   });
-  PersistedLinkUser.belongsTo(PersistedUser, {
+  PersistedLinkUserDetails.belongsTo(PersistedUser, {
     as: "createdBy",
     foreignKey: {
       allowNull: false,
@@ -214,7 +217,7 @@ export const initUser = (sequelize: Sequelize) => {
     },
   });
 
-  PersistedAccountUser.hasMany(PersistedLinkUser, {
+  PersistedAccountUserDetails.hasMany(PersistedLinkUserDetails, {
     as: "links",
     sourceKey: "id",
     foreignKey: {
@@ -223,7 +226,7 @@ export const initUser = (sequelize: Sequelize) => {
       name: "linkForUserId",
     },
   });
-  PersistedLinkUser.belongsTo(PersistedAccountUser, {
+  PersistedLinkUserDetails.belongsTo(PersistedAccountUserDetails, {
     as: "linkFor",
     targetKey: "id",
     foreignKey: {

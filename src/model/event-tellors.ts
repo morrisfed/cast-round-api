@@ -10,7 +10,7 @@ import { PersistedEventTellor } from "./db/event-tellors";
 import { findPersistedEventTellors } from "./_internal/event-tellors";
 
 import { PersistedEvent } from "./db/events";
-import { PersistedLinkUser } from "./db/users";
+import { PersistedLinkUserDetails } from "./db/users";
 import {
   ModelBuildableEventTellor,
   ModelEventTellor,
@@ -21,7 +21,7 @@ import { decodePersistedIOE } from "./_internal/utils";
 
 interface PersistedEventTellorWithEventAndUser extends PersistedEventTellor {
   event: PersistedEvent;
-  tellorUser: PersistedLinkUser;
+  tellorUser: PersistedLinkUserDetails;
 }
 
 const isPersistedEventTellorWithEventAndUser: Refinement<

@@ -1,8 +1,8 @@
 import { Sequelize, Transaction } from "sequelize";
 import env from "../../utils/env";
 import {
-  PersistedAccountUser,
-  PersistedLinkUser,
+  PersistedAccountUserDetails,
+  PersistedLinkUserDetails,
   PersistedUser,
   initUser,
 } from "./users";
@@ -69,7 +69,7 @@ export const initDb = async () => {
     foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
   });
 
-  PersistedLinkUser.hasMany(PersistedEventGroupDelegate, {
+  PersistedLinkUserDetails.hasMany(PersistedEventGroupDelegate, {
     as: "groupDelegateEvents",
     foreignKey: {
       allowNull: false,
@@ -78,7 +78,7 @@ export const initDb = async () => {
     },
     sourceKey: "id",
   });
-  PersistedEventGroupDelegate.belongsTo(PersistedLinkUser, {
+  PersistedEventGroupDelegate.belongsTo(PersistedLinkUserDetails, {
     as: "delegateUser",
     foreignKey: {
       allowNull: false,
@@ -88,7 +88,7 @@ export const initDb = async () => {
     targetKey: "id",
   });
 
-  PersistedLinkUser.hasMany(PersistedEventTellor, {
+  PersistedLinkUserDetails.hasMany(PersistedEventTellor, {
     as: "tellorEvents",
     foreignKey: {
       allowNull: false,
@@ -97,7 +97,7 @@ export const initDb = async () => {
     },
     sourceKey: "id",
   });
-  PersistedEventTellor.belongsTo(PersistedLinkUser, {
+  PersistedEventTellor.belongsTo(PersistedLinkUserDetails, {
     as: "tellorUser",
     foreignKey: {
       allowNull: false,
@@ -107,7 +107,7 @@ export const initDb = async () => {
     targetKey: "id",
   });
 
-  PersistedAccountUser.hasMany(PersistedEventGroupDelegate, {
+  PersistedAccountUserDetails.hasMany(PersistedEventGroupDelegate, {
     as: "eventDelegates",
     foreignKey: {
       allowNull: false,
@@ -116,7 +116,7 @@ export const initDb = async () => {
     },
     sourceKey: "id",
   });
-  PersistedEventGroupDelegate.belongsTo(PersistedAccountUser, {
+  PersistedEventGroupDelegate.belongsTo(PersistedAccountUserDetails, {
     as: "delegateFor",
     foreignKey: {
       allowNull: false,

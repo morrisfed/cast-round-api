@@ -6,9 +6,9 @@ import * as A from "fp-ts/lib/Array";
 
 import { Transaction } from "sequelize";
 import {
-  PersistedAccountUser,
+  PersistedAccountUserDetails,
   PersistedUser,
-  PersistedLinkUser,
+  PersistedLinkUserDetails,
 } from "./db/users";
 
 import { deletePersistedUser, findPersistedUser } from "./_internal/user";
@@ -21,7 +21,7 @@ import { decodePersistedIOE } from "./_internal/utils";
 
 interface PersistedUserAsLinkUser extends PersistedUser {
   source: "link";
-  link: PersistedLinkUser;
+  link: PersistedLinkUserDetails;
 }
 
 const isPersistedUserWithLink: Refinement<
@@ -31,9 +31,9 @@ const isPersistedUserWithLink: Refinement<
 
 export const findAll = (
   t: Transaction
-): TE.TaskEither<Error, PersistedLinkUser[]> =>
+): TE.TaskEither<Error, PersistedLinkUserDetails[]> =>
   TE.tryCatch(
-    () => PersistedLinkUser.findAll({ transaction: t }),
+    () => PersistedLinkUserDetails.findAll({ transaction: t }),
     (reason) => new Error(String(reason))
   );
 
@@ -45,10 +45,10 @@ const persistedLinkUserModelLinkUserNoExpansion = (
   )(() => new Error("Invalid user info read from database"))(persistedLinkUser);
 
 const persistedLinkUserDetailsAsModelLinkUserDetailsWithCreatedBy = (
-  persistedLinkUserDetails: PersistedLinkUser
+  persistedLinkUserDetails: PersistedLinkUserDetails
 ): IOE.IOEither<Error, ModelLinkUserDetailsWithCreatedBy> =>
   decodePersistedIOE<
-    PersistedLinkUser,
+    PersistedLinkUserDetails,
     ModelLinkUserDetailsWithCreatedBy,
     Error
   >(ModelLinkUserDetailsWithCreatedBy)(
@@ -56,7 +56,7 @@ const persistedLinkUserDetailsAsModelLinkUserDetailsWithCreatedBy = (
   )(persistedLinkUserDetails);
 
 const persistedLinkUserDetailsArrayAsModelLinkUserDetailsWithCreatedByArray = (
-  persistedLinkUserDetailsArray: PersistedLinkUser[]
+  persistedLinkUserDetailsArray: PersistedLinkUserDetails[]
 ): IOE.IOEither<Error, ModelLinkUserDetailsWithCreatedBy[]> =>
   pipe(
     persistedLinkUserDetailsArray,
@@ -94,7 +94,7 @@ const createPersistedUserAsLinkUser =
                 transaction: t,
                 include: [
                   { model: PersistedUser, as: "createdBy" },
-                  { model: PersistedAccountUser, as: "linkFor" },
+                  { model: PersistedAccountUserDetails, as: "linkFor" },
                 ],
               }
             ),
@@ -130,7 +130,7 @@ export const deleteLinkUser =
     pipe(
       TE.tryCatch(
         () =>
-          PersistedLinkUser.destroy({
+          PersistedLinkUserDetails.destroy({
             where: { id: linkUserId },
             transaction: t,
           }),
@@ -147,7 +147,7 @@ export const findLinkUsersDetailsWithCreatedByLinkUserForAccountId =
     pipe(
       TE.tryCatch(
         () =>
-          PersistedLinkUser.findAll({
+          PersistedLinkUserDetails.findAll({
             where: { linkForUserId: accountId },
             transaction: t,
             include: ["createdBy"],
