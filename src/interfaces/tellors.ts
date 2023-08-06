@@ -1,5 +1,5 @@
 import { Event } from "./events";
-import { LinkUserDetails } from "./users";
+import { LinkUserDetailsNoExpansion } from "./users";
 
 export interface EventTellorNoExpansion {
   eventId: number;
@@ -8,7 +8,7 @@ export interface EventTellorNoExpansion {
 
 export interface EventTellor extends EventTellorNoExpansion {
   event: Event;
-  tellorUser: LinkUserDetails;
+  tellorUser: LinkUserDetailsNoExpansion;
 }
 
 export interface BuildableEventTellor

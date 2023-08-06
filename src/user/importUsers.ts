@@ -2,6 +2,7 @@ import * as TE from "fp-ts/lib/TaskEither";
 import * as RA from "fp-ts/lib/ReadonlyArray";
 import { pipe } from "fp-ts/lib/function";
 import { Monoid } from "fp-ts/lib/Monoid";
+
 import { Transaction } from "sequelize";
 import { AccountUser } from "../interfaces/users";
 import transactionalTaskEither from "../model/transaction";

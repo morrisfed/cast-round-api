@@ -9,19 +9,18 @@ import {
   NonAttribute,
   Sequelize,
 } from "sequelize";
-import { Event } from "../../interfaces/events";
-import { EventTellor } from "../../interfaces/tellors";
+import { DbEventTellor } from "./interfaces/db-event-tellors";
 
 export class PersistedEventTellor
   extends Model<
     InferAttributes<PersistedEventTellor>,
     InferCreationAttributes<PersistedEventTellor>
   >
-  implements EventTellor
+  implements DbEventTellor
 {
-  declare event: NonAttribute<Event>;
+  declare event: NonAttribute<DbEventTellor["event"]>;
 
-  declare tellorUser: NonAttribute<EventTellor["tellorUser"]>;
+  declare tellorUser: NonAttribute<DbEventTellor["tellorUser"]>;
 
   declare eventId: CreationOptional<number>;
 

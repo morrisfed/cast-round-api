@@ -12,36 +12,34 @@ import {
   NonAttribute,
   Sequelize,
 } from "sequelize";
+
 import {
-  AccountUserDetails,
-  LinkUserDetails,
-  LinkUserDetailsNoExpansion,
-  LinkUserType,
-  User,
-  UserSource,
-} from "../../interfaces/users";
-import { MembershipWorksUserType } from "../../membership-works/MembershipWorksTypes";
+  DbAccountUserDetails,
+  DbLinkUserDetails,
+  DbLinkUserDetailsNoExpansion,
+  DbUser,
+} from "./interfaces/db-users";
 
 export class PersistedUser
   extends Model<
     InferAttributes<PersistedUser>,
     InferCreationAttributes<PersistedUser>
   >
-  implements User
+  implements DbUser
 {
   declare id: string;
 
   declare enabled: boolean;
 
-  declare source: UserSource;
+  declare source: string;
 
   declare createdAt: CreationOptional<Date>;
 
   declare updatedAt: CreationOptional<Date>;
 
-  declare account?: AccountUserDetails;
+  declare account?: InferAttributes<PersistedAccountUser>;
 
-  declare link?: LinkUserDetailsNoExpansion;
+  declare link?: DbLinkUserDetailsNoExpansion;
 
   declare createAccount: HasOneCreateAssociationMixin<PersistedAccountUser>;
 
@@ -53,7 +51,7 @@ export class PersistedAccountUser
     InferAttributes<PersistedAccountUser>,
     InferCreationAttributes<PersistedAccountUser>
   >
-  implements AccountUserDetails
+  implements DbAccountUserDetails
 {
   declare id: string;
 
@@ -61,7 +59,7 @@ export class PersistedAccountUser
 
   declare contactName: string | null;
 
-  declare type: MembershipWorksUserType;
+  declare type: string;
 
   declare isAdmin: boolean;
 
@@ -79,13 +77,13 @@ export class PersistedLinkUser
     InferAttributes<PersistedLinkUser>,
     InferCreationAttributes<PersistedLinkUser>
   >
-  implements LinkUserDetails
+  implements DbLinkUserDetails
 {
   declare id: string;
 
   declare label: string;
 
-  declare type: LinkUserType;
+  declare type: string;
 
   declare linkForUserId: CreationOptional<string>;
 

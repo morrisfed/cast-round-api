@@ -1,7 +1,7 @@
 import { MembershipWorksUserType } from "../membership-works/MembershipWorksTypes";
 
 export type LinkUserType = "group-delegate" | "tellor";
-export type UserSource = "account" | "link";
+type UserSource = "account" | "link";
 
 export type UserType = MembershipWorksUserType | LinkUserType;
 
@@ -16,7 +16,7 @@ export interface AccountUserDetails {
 export interface BuildableAccountUserDetails extends AccountUserDetails {}
 
 export interface AccountUserDetailsWithLinks extends AccountUserDetails {
-  links?: LinkUserDetails[];
+  links?: LinkUserDetailsNoExpansion[];
 }
 
 export interface LinkUserDetailsNoExpansion {
@@ -24,7 +24,7 @@ export interface LinkUserDetailsNoExpansion {
   label: string;
   type: LinkUserType;
 
-  linkForUserId?: string;
+  linkForUserId?: string | null;
   createdByUserId?: string;
 }
 
@@ -70,15 +70,14 @@ export interface AccountUserWithLinks extends AccountUser {
   account: AccountUserDetailsWithLinks;
 }
 
-export interface LinkUserNoExpansion extends User {
+export interface LinkUser extends User {
   source: "link";
-  link: LinkUserDetailsNoExpansion;
 }
 
-export interface LinkUser extends LinkUserNoExpansion {
+export interface LinkUserWithDetails extends LinkUser {
   link: LinkUserDetails;
 }
 
-export interface BuildableLinkUser extends Omit<LinkUser, "link"> {
+export interface BuildableLinkUser extends Omit<LinkUserWithDetails, "link"> {
   link: BuildableLinkUserDetails;
 }

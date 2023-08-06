@@ -8,15 +8,15 @@ import {
   NonAttribute,
   Sequelize,
 } from "sequelize";
-import { Event } from "../../interfaces/events";
-import { Motion } from "../../interfaces/motions";
+import { DbMotion } from "./interfaces/db-motions";
+import { DbEvent } from "./interfaces/db-events";
 
 export class PersistedEvent
   extends Model<
     InferAttributes<PersistedEvent>,
     InferCreationAttributes<PersistedEvent>
   >
-  implements Event
+  implements DbEvent
 {
   declare id: NonAttribute<number>;
 
@@ -28,7 +28,7 @@ export class PersistedEvent
 
   declare toDate: Date;
 
-  declare motions?: Motion[];
+  declare motions?: DbMotion[];
 }
 
 const initEventModel = (sequelize: Sequelize) =>

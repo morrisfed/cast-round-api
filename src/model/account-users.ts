@@ -1,98 +1,92 @@
 import { pipe } from "fp-ts/lib/function";
-import { Refinement } from "fp-ts/lib/Refinement";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as IOE from "fp-ts/lib/IOEither";
+import * as A from "fp-ts/lib/Array";
 
 import { Transaction } from "sequelize";
+import { PersistedAccountUser, PersistedUser } from "./db/users";
+
 import {
-  PersistedAccountUser,
-  PersistedUser,
-  PersistedLinkUser,
-} from "./db/users";
-import {
-  AccountUserDetails,
-  AccountUser,
-  AccountUserWithLinks,
-  BuildableAccountUser,
-} from "../interfaces/users";
-import { findPersistedUser, savePersistedUser } from "./_internal/user";
-
-interface PersistedAccountWithLinks extends PersistedAccountUser {
-  links: PersistedLinkUser[];
-}
-
-interface PersistedUserWithAccount extends PersistedUser {
-  source: "account";
-  account: PersistedAccountUser;
-}
-
-interface PersistedUserWithAccountAndAccountLinks
-  extends PersistedUserWithAccount {
-  account: PersistedAccountWithLinks;
-}
-
-const isPersistedUserWithAccount: Refinement<
-  PersistedUser,
-  PersistedUserWithAccount
-> = (pui): pui is PersistedUserWithAccount => pui.account !== undefined;
-
-const isPersistedUserWithAccountAndAccountLinks: Refinement<
+  findPersistedUserWithAccountAndAccountLinksById,
+  findPersistedUserWithAccountById,
+  isPersistedUserWithAccount,
   PersistedUserWithAccount,
-  PersistedUserWithAccountAndAccountLinks
-> = (pui): pui is PersistedUserWithAccountAndAccountLinks =>
-  pui.account.links !== undefined;
+  savePersistedUser,
+} from "./_internal/user";
+import {
+  ModelAccountUser,
+  ModelAccountUserDetails,
+  ModelAccountUserDetailsUpdates,
+  ModelAccountUserUpdates,
+  ModelAccountUserWithLinks,
+  ModelBuildableAccountUser,
+} from "./interfaces/model-users";
+import { decodePersistedIOE } from "./_internal/utils";
 
-const findPersistedUserWithAccountById = (t: Transaction) => (id: string) =>
+const persistedAccountUserDetailsAsModelAccountUserDetails = (
+  persistedAccountUser: PersistedAccountUser
+): IOE.IOEither<Error, ModelAccountUserDetails> =>
+  decodePersistedIOE<PersistedAccountUser, ModelAccountUserDetails, Error>(
+    ModelAccountUserDetails
+  )(() => new Error("Invalid user info read from database"))(
+    persistedAccountUser
+  );
+
+const persistedAccountUserDetailsArrayAsModelAccountUserDetailsArray = (
+  persistedAccountUsers: PersistedAccountUser[]
+): IOE.IOEither<Error, ModelAccountUserDetails[]> =>
   pipe(
-    findPersistedUser("account")(t)(id),
-    TE.chainW(
-      TE.fromPredicate(
-        isPersistedUserWithAccount,
-        () => new Error(`Data error: user ${id} has no account`)
-      )
+    persistedAccountUsers,
+    A.traverse(IOE.ApplicativePar)(
+      persistedAccountUserDetailsAsModelAccountUserDetails
     )
   );
 
-const findPersistedUserWithAccountAndAccountLinksById =
-  (t: Transaction) => (id: string) =>
-    pipe(
-      findPersistedUser([
-        {
-          model: PersistedAccountUser,
-          as: "account",
-          include: [{ model: PersistedLinkUser, as: "links" }],
-        },
-      ])(t)(id),
-      TE.chainW(
-        TE.fromPredicate(
-          isPersistedUserWithAccount,
-          () => new Error(`Data error: user ${id} has no account`)
-        )
-      ),
-      TE.chainW(
-        TE.fromPredicate(
-          isPersistedUserWithAccountAndAccountLinks,
-          () => new Error(`Data error: user ${id} has no links`)
-        )
-      )
-    );
+const persistedAccountUserModelAccountUser = (
+  persistedAccountUser: PersistedUserWithAccount
+): IOE.IOEither<Error, ModelAccountUser> =>
+  decodePersistedIOE<PersistedUserWithAccount, ModelAccountUser, Error>(
+    ModelAccountUser
+  )(() => new Error("Invalid user info read from database"))(
+    persistedAccountUser
+  );
+
+const persistedAccountUserWithLinksAsModelAccountUserWithLinks = (
+  persistedAccountUser: PersistedUserWithAccount
+): IOE.IOEither<Error, ModelAccountUserWithLinks> =>
+  decodePersistedIOE<
+    PersistedUserWithAccount,
+    ModelAccountUserWithLinks,
+    Error
+  >(ModelAccountUserWithLinks)(
+    () => new Error("Invalid user info read from database")
+  )(persistedAccountUser);
 
 export const findAllAccounts = (
   t: Transaction
-): TE.TaskEither<Error, AccountUserDetails[]> =>
-  TE.tryCatch(
-    () => PersistedAccountUser.findAll({ transaction: t }),
-    (reason) => new Error(String(reason))
+): TE.TaskEither<Error, ModelAccountUserDetails[]> =>
+  pipe(
+    TE.tryCatch(
+      () => PersistedAccountUser.findAll({ transaction: t }),
+      (reason) => new Error(String(reason))
+    ),
+    TE.chainIOEitherKW(
+      persistedAccountUserDetailsArrayAsModelAccountUserDetailsArray
+    )
   );
 
 export const findAccountUserWithLinksById =
   (t: Transaction) =>
-  (
-    id: string
-  ): TE.TaskEither<Error | "not-found", AccountUserWithLinks | null> =>
-    findPersistedUserWithAccountAndAccountLinksById(t)(id);
+  (id: string): TE.TaskEither<Error | "not-found", ModelAccountUserWithLinks> =>
+    pipe(
+      findPersistedUserWithAccountAndAccountLinksById(t)(id),
+      TE.chainIOEitherKW(
+        persistedAccountUserWithLinksAsModelAccountUserWithLinks
+      )
+    );
 
 const createPersistedUserWithAccount =
-  (t: Transaction) => (userWithAccount: BuildableAccountUser) =>
+  (t: Transaction) => (userWithAccount: ModelBuildableAccountUser) =>
     pipe(
       TE.tryCatch(
         () =>
@@ -135,11 +129,11 @@ const createPersistedUserWithAccount =
     );
 
 export const createAccountUser =
-  (t: Transaction) => (userWithAccount: AccountUser) =>
+  (t: Transaction) => (userWithAccount: ModelAccountUser) =>
     pipe(createPersistedUserWithAccount(t)(userWithAccount));
 
-const applyUpdatesToPersistedUserInfoObject =
-  (updates: Partial<AccountUser>) =>
+const applyUpdatesToPersistedAccountUser =
+  (updates: Omit<ModelAccountUserUpdates, "account">) =>
   (user: PersistedUserWithAccount): PersistedUserWithAccount =>
     user.set(updates);
 
@@ -149,9 +143,9 @@ const savePersistedAccount = (t: Transaction) => (pa: PersistedAccountUser) =>
     (reason) => new Error(String(reason))
   );
 
-const applyAndSaveUpdateToPersistedAccount =
+const applyAndSaveUpdateToPersistedAccountUserDetails =
   (t: Transaction) =>
-  (updates: Partial<AccountUserDetails> | undefined) =>
+  (updates: ModelAccountUserDetailsUpdates | undefined) =>
   (pa: PersistedAccountUser) =>
     pipe(pa.set(updates ?? {}), savePersistedAccount(t));
 
@@ -159,13 +153,16 @@ export const updateUserWithAccount =
   (t: Transaction) =>
   (
     id: string,
-    updates: Partial<AccountUser>
-  ): TE.TaskEither<Error | "not-found", AccountUser> =>
+    updates: ModelAccountUserUpdates
+  ): TE.TaskEither<Error | "not-found", ModelAccountUser> =>
     pipe(
       findPersistedUserWithAccountById(t)(id),
       TE.chainFirstW((pu) =>
-        applyAndSaveUpdateToPersistedAccount(t)(updates.account)(pu.account)
+        applyAndSaveUpdateToPersistedAccountUserDetails(t)(updates.account)(
+          pu.account
+        )
       ),
-      TE.map(applyUpdatesToPersistedUserInfoObject(updates)),
-      TE.chainW(savePersistedUser(t))
+      TE.map(applyUpdatesToPersistedAccountUser(updates)),
+      TE.chainW(savePersistedUser(t)),
+      TE.chainIOEitherKW(persistedAccountUserModelAccountUser)
     );

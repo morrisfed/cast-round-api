@@ -9,14 +9,14 @@ import {
   Sequelize,
 } from "sequelize";
 
-import { ModelMotion, ModelMotionStatus } from "../interfaces/model-motions";
+import { DbMotion } from "./interfaces/db-motions";
 
 export class PersistedMotion
   extends Model<
     InferAttributes<PersistedMotion>,
     InferCreationAttributes<PersistedMotion>
   >
-  implements ModelMotion
+  implements DbMotion
 {
   declare id: NonAttribute<number>;
 
@@ -26,7 +26,7 @@ export class PersistedMotion
 
   declare description: string;
 
-  declare status: ModelMotionStatus;
+  declare status: string;
 }
 
 const initMotionModel = (sequelize: Sequelize) =>

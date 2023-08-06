@@ -1,18 +1,23 @@
-export type ModelMotionStatus =
-  | "draft"
-  | "proxy"
-  | "open"
-  | "closed"
-  | "cancelled"
-  | "discarded";
+import * as t from "io-ts";
 
-export interface ModelMotion {
-  id: number;
-  eventId: number;
-  status: ModelMotionStatus;
-  title: string;
-  description: string;
-}
+const ModelMotionStatus = t.union([
+  t.literal("draft"),
+  t.literal("proxy"),
+  t.literal("open"),
+  t.literal("closed"),
+  t.literal("cancelled"),
+  t.literal("discarded"),
+]);
+export type ModelMotionStatus = t.TypeOf<typeof ModelMotionStatus>;
+
+export const ModelMotion = t.strict({
+  id: t.number,
+  eventId: t.number,
+  status: ModelMotionStatus,
+  title: t.string,
+  description: t.string,
+});
+export type ModelMotion = t.TypeOf<typeof ModelMotion>;
 
 export interface ModelBuildableMotion extends Omit<ModelMotion, "id"> {}
 

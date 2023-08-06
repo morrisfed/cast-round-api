@@ -1,5 +1,6 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as IOE from "fp-ts/lib/IOEither";
 import * as A from "fp-ts/lib/Array";
 import { Refinement } from "fp-ts/lib/Refinement";
 
@@ -7,13 +8,16 @@ import { Transaction } from "sequelize";
 
 import { PersistedEventTellor } from "./db/event-tellors";
 import { findPersistedEventTellors } from "./_internal/event-tellors";
-import {
-  BuildableEventTellor,
-  EventTellor,
-  EventTellorNoExpansion,
-} from "../interfaces/tellors";
+
 import { PersistedEvent } from "./db/events";
 import { PersistedLinkUser } from "./db/users";
+import {
+  ModelBuildableEventTellor,
+  ModelEventTellor,
+  ModelEventTellorNoExpansion,
+} from "./interfaces/model-event-tellors";
+import { DbEventTellor } from "./db/interfaces/db-event-tellors";
+import { decodePersistedIOE } from "./_internal/utils";
 
 interface PersistedEventTellorWithEventAndUser extends PersistedEventTellor {
   event: PersistedEvent;
@@ -26,24 +30,38 @@ const isPersistedEventTellorWithEventAndUser: Refinement<
 > = (pet): pet is PersistedEventTellorWithEventAndUser =>
   pet.event !== undefined && pet.tellorUser !== undefined;
 
+const dbEventTellorAsModelEventTellor = (
+  dbEventTellor: DbEventTellor
+): IOE.IOEither<Error, ModelEventTellor> =>
+  decodePersistedIOE<DbEventTellor, ModelEventTellor, Error>(ModelEventTellor)(
+    () => new Error("Invalid event tellor read from database")
+  )(dbEventTellor);
+
+const dbEventTellorAsModelEventTellorNoExpansion = (
+  dbEventTellor: DbEventTellor
+): IOE.IOEither<Error, ModelEventTellorNoExpansion> =>
+  decodePersistedIOE<DbEventTellor, ModelEventTellorNoExpansion, Error>(
+    ModelEventTellorNoExpansion
+  )(() => new Error("Invalid event tellor read from database"))(dbEventTellor);
+
+const dbEventTellorArrayAsModelEventTellorArray = (
+  dbEventTellors: DbEventTellor[]
+): IOE.IOEither<Error, ModelEventTellor[]> =>
+  A.traverse(IOE.ApplicativePar)(dbEventTellorAsModelEventTellor)(
+    dbEventTellors
+  );
+
 export const findEventTellorsByEvent =
   (t: Transaction) =>
-  (eventId: number): TE.TaskEither<Error, EventTellor[]> =>
+  (eventId: number): TE.TaskEither<Error, ModelEventTellor[]> =>
     pipe(
       findPersistedEventTellors(["tellorUser", "event"])(t)(eventId),
       TE.map(A.filter(isPersistedEventTellorWithEventAndUser)),
-      TE.map(
-        A.map((persistedEventTellor) => ({
-          eventId: persistedEventTellor.eventId,
-          tellorUserId: persistedEventTellor.tellorUserId,
-          tellorUser: persistedEventTellor.tellorUser,
-          event: persistedEventTellor.event,
-        }))
-      )
+      TE.chainIOEitherKW(dbEventTellorArrayAsModelEventTellorArray)
     );
 
 const createPersistedEventTellor =
-  (t: Transaction) => (buildableEventTellor: BuildableEventTellor) =>
+  (t: Transaction) => (buildableEventTellor: ModelBuildableEventTellor) =>
     pipe(
       TE.tryCatch(
         () =>
@@ -61,14 +79,11 @@ const createPersistedEventTellor =
 export const createEventTellor =
   (t: Transaction) =>
   (
-    buildableEventTellor: BuildableEventTellor
-  ): TE.TaskEither<Error, EventTellorNoExpansion> =>
+    buildableEventTellor: ModelBuildableEventTellor
+  ): TE.TaskEither<Error, ModelEventTellorNoExpansion> =>
     pipe(
       createPersistedEventTellor(t)(buildableEventTellor),
-      TE.map((persistedEventTellor) => ({
-        eventId: persistedEventTellor.eventId,
-        tellorUserId: persistedEventTellor.tellorUserId,
-      }))
+      TE.chainIOEitherK(dbEventTellorAsModelEventTellorNoExpansion)
     );
 
 export const deleteEventTellor =

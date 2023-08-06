@@ -1,6 +1,8 @@
 import { pipe } from "fp-ts/lib/function";
 import { Refinement } from "fp-ts/lib/Refinement";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as IOE from "fp-ts/lib/IOEither";
+import * as A from "fp-ts/lib/Array";
 
 import { Transaction } from "sequelize";
 import {
@@ -8,13 +10,14 @@ import {
   PersistedUser,
   PersistedLinkUser,
 } from "./db/users";
-import {
-  BuildableLinkUser,
-  LinkUser,
-  LinkUserDetailsWithCreatedBy,
-  LinkUserNoExpansion,
-} from "../interfaces/users";
+
 import { deletePersistedUser, findPersistedUser } from "./_internal/user";
+import {
+  ModelBuildableLinkUser,
+  ModelLinkUserDetailsWithCreatedBy,
+  ModelLinkUserNoExpansion,
+} from "./interfaces/model-users";
+import { decodePersistedIOE } from "./_internal/utils";
 
 interface PersistedUserAsLinkUser extends PersistedUser {
   source: "link";
@@ -34,8 +37,36 @@ export const findAll = (
     (reason) => new Error(String(reason))
   );
 
+const persistedLinkUserModelLinkUserNoExpansion = (
+  persistedLinkUser: PersistedUserAsLinkUser
+): IOE.IOEither<Error, ModelLinkUserNoExpansion> =>
+  decodePersistedIOE<PersistedUserAsLinkUser, ModelLinkUserNoExpansion, Error>(
+    ModelLinkUserNoExpansion
+  )(() => new Error("Invalid user info read from database"))(persistedLinkUser);
+
+const persistedLinkUserDetailsAsModelLinkUserDetailsWithCreatedBy = (
+  persistedLinkUserDetails: PersistedLinkUser
+): IOE.IOEither<Error, ModelLinkUserDetailsWithCreatedBy> =>
+  decodePersistedIOE<
+    PersistedLinkUser,
+    ModelLinkUserDetailsWithCreatedBy,
+    Error
+  >(ModelLinkUserDetailsWithCreatedBy)(
+    () => new Error("Invalid user info read from database")
+  )(persistedLinkUserDetails);
+
+const persistedLinkUserDetailsArrayAsModelLinkUserDetailsWithCreatedByArray = (
+  persistedLinkUserDetailsArray: PersistedLinkUser[]
+): IOE.IOEither<Error, ModelLinkUserDetailsWithCreatedBy[]> =>
+  pipe(
+    persistedLinkUserDetailsArray,
+    A.traverse(IOE.ApplicativePar)(
+      persistedLinkUserDetailsAsModelLinkUserDetailsWithCreatedBy
+    )
+  );
+
 const createPersistedUserAsLinkUser =
-  (t: Transaction) => (linkUser: BuildableLinkUser) =>
+  (t: Transaction) => (linkUser: ModelBuildableLinkUser) =>
     pipe(
       TE.tryCatch(
         () =>
@@ -85,8 +116,13 @@ const createPersistedUserAsLinkUser =
 
 export const createLinkUser =
   (t: Transaction) =>
-  (delegateUserInfo: BuildableLinkUser): TE.TaskEither<Error, LinkUser> =>
-    pipe(createPersistedUserAsLinkUser(t)(delegateUserInfo));
+  (
+    delegateUserInfo: ModelBuildableLinkUser
+  ): TE.TaskEither<Error, ModelLinkUserNoExpansion> =>
+    pipe(
+      createPersistedUserAsLinkUser(t)(delegateUserInfo),
+      TE.chainIOEitherKW(persistedLinkUserModelLinkUserNoExpansion)
+    );
 
 export const deleteLinkUser =
   (t: Transaction) =>
@@ -107,20 +143,25 @@ export const findLinkUsersDetailsWithCreatedByLinkUserForAccountId =
   (t: Transaction) =>
   (
     accountId: string
-  ): TE.TaskEither<Error, LinkUserDetailsWithCreatedBy[] | null> =>
-    TE.tryCatch(
-      () =>
-        PersistedLinkUser.findAll({
-          where: { linkForUserId: accountId },
-          transaction: t,
-          include: ["createdBy"],
-        }),
-      (reason) => new Error(String(reason))
+  ): TE.TaskEither<Error, ModelLinkUserDetailsWithCreatedBy[] | null> =>
+    pipe(
+      TE.tryCatch(
+        () =>
+          PersistedLinkUser.findAll({
+            where: { linkForUserId: accountId },
+            transaction: t,
+            include: ["createdBy"],
+          }),
+        (reason) => new Error(String(reason))
+      ),
+      TE.chainIOEitherKW(
+        persistedLinkUserDetailsArrayAsModelLinkUserDetailsWithCreatedByArray
+      )
     );
 
 export const findLinkUserById =
   (t: Transaction) =>
-  (id: string): TE.TaskEither<Error | "not-found", LinkUserNoExpansion> =>
+  (id: string): TE.TaskEither<Error | "not-found", ModelLinkUserNoExpansion> =>
     pipe(
       findPersistedUser(["link"])(t)(id),
       TE.chainW(
@@ -129,17 +170,5 @@ export const findLinkUserById =
           () => new Error(`Data error: user ${id} has no link`)
         )
       ),
-      TE.map((persistedUser) => ({
-        id: persistedUser.id,
-        source: persistedUser.source,
-        enabled: persistedUser.enabled,
-        link: {
-          id: persistedUser.link.id,
-          label: persistedUser.link.label,
-          type: persistedUser.link.type,
-
-          linkForUserId: persistedUser.link.linkForUserId,
-          createdByUserId: persistedUser.link.createdByUserId,
-        },
-      }))
+      TE.chainIOEitherKW(persistedLinkUserModelLinkUserNoExpansion)
     );

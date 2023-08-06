@@ -1,8 +1,13 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
+import { Refinement } from "fp-ts/lib/Refinement";
 
 import { FindOptions, Transaction } from "sequelize";
-import { PersistedUser } from "../db/users";
+import {
+  PersistedAccountUser,
+  PersistedLinkUser,
+  PersistedUser,
+} from "../db/users";
 
 export const findPersistedUser =
   (include: FindOptions["include"]) => (t: Transaction) => (id: string) =>
@@ -31,3 +36,64 @@ export const deletePersistedUser = (t: Transaction) => (id: string) =>
     () => PersistedUser.destroy({ where: { id }, transaction: t }),
     (reason) => new Error(String(reason))
   );
+
+export interface PersistedUserWithAccount extends PersistedUser {
+  source: "account";
+  account: PersistedAccountUser;
+}
+
+interface PersistedAccountWithLinks extends PersistedAccountUser {
+  links: PersistedLinkUser[];
+}
+
+interface PersistedUserWithAccountAndAccountLinks
+  extends PersistedUserWithAccount {
+  account: PersistedAccountWithLinks;
+}
+
+export const isPersistedUserWithAccount: Refinement<
+  PersistedUser,
+  PersistedUserWithAccount
+> = (pui): pui is PersistedUserWithAccount => pui.account !== undefined;
+
+export const isPersistedUserWithAccountAndAccountLinks: Refinement<
+  PersistedUserWithAccount,
+  PersistedUserWithAccountAndAccountLinks
+> = (pui): pui is PersistedUserWithAccountAndAccountLinks =>
+  pui.account.links !== undefined;
+
+export const findPersistedUserWithAccountById =
+  (t: Transaction) => (id: string) =>
+    pipe(
+      findPersistedUser("account")(t)(id),
+      TE.chainW(
+        TE.fromPredicate(
+          isPersistedUserWithAccount,
+          () => new Error(`Data error: user ${id} has no account`)
+        )
+      )
+    );
+
+export const findPersistedUserWithAccountAndAccountLinksById =
+  (t: Transaction) => (id: string) =>
+    pipe(
+      findPersistedUser([
+        {
+          model: PersistedAccountUser,
+          as: "account",
+          include: [{ model: PersistedLinkUser, as: "links" }],
+        },
+      ])(t)(id),
+      TE.chainW(
+        TE.fromPredicate(
+          isPersistedUserWithAccount,
+          () => new Error(`Data error: user ${id} has no account`)
+        )
+      ),
+      TE.chainW(
+        TE.fromPredicate(
+          isPersistedUserWithAccountAndAccountLinks,
+          () => new Error(`Data error: user ${id} has no links`)
+        )
+      )
+    );

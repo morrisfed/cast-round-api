@@ -5,7 +5,6 @@ import { randomUUID } from "crypto";
 import {
   AccountUserDetailsWithLinks,
   BuildableLinkUser,
-  LinkUser,
   User,
 } from "../interfaces/users";
 import {
@@ -23,10 +22,7 @@ import {
 } from "../model/event-group-delegates";
 import { isGroupAccountType } from "../accounts/accountTypes";
 import { findAccountUserWithLinksById } from "../model/account-users";
-import {
-  CreateEventGroupDelegateRequest,
-  CreateGroupDelegateRequest,
-} from "./requests";
+import { CreateEventGroupDelegateRequest } from "./requests";
 import { getEvent } from "../events";
 import { EventGroupDelegate } from "../interfaces/events";
 
@@ -136,51 +132,4 @@ export const createEventGroupDelegate =
     }
 
     return TE.left("forbidden" as const);
-  };
-
-/**
- * Group delegates are associated with a group account. Users may have permission to create any group delegates,
- * or may only have permission to create group delegates for their own group account.
- * @param user The user requesting creation of a group delegate.
- * @returns The created group delegate.
- */
-export const createGroupDelegate =
-  (user: User) =>
-  (
-    createRequest: CreateGroupDelegateRequest
-  ): TE.TaskEither<
-    Error | "forbidden" | "invalid-delegate-for" | "not-found",
-    LinkUser
-  > => {
-    if (
-      hasPermissionToCreateGroupDelegateForAccount(user)(
-        createRequest.delegateForAccountId
-      )
-    ) {
-      return transactionalTaskEither((t) =>
-        pipe(
-          getGroupAccountForDelegateCreation(user)(
-            createRequest.delegateForAccountId
-          ),
-          TE.chainW(() => {
-            const id = randomUUID();
-            const linkUser: BuildableLinkUser = {
-              id,
-              enabled: true,
-              source: "link",
-              link: {
-                id,
-                label: createRequest.label,
-                type: "group-delegate",
-                linkForUserId: createRequest.delegateForAccountId,
-                createdByUserId: user.id,
-              },
-            };
-            return createLinkUser(t)(linkUser);
-          })
-        )
-      );
-    }
-
-    return TE.left("forbidden");
   };

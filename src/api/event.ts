@@ -218,7 +218,7 @@ eventRouter.post<EventIdObject, CreateMotionResponse, CreateMotionRequest>(
         E.mapLeft(() => "bad-request"),
         TE.fromEither,
         TE.chainW(({ eventId }) =>
-          createEventMotion(req.user, req.params.eventId, {
+          createEventMotion(req.user, eventId, {
             ...req.body.motion,
             eventId,
           })

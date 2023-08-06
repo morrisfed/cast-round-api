@@ -9,20 +9,21 @@ import {
   NonAttribute,
   Sequelize,
 } from "sequelize";
-import { Event, EventGroupDelegate } from "../../interfaces/events";
+import { DbEventGroupDelegate } from "./interfaces/db-event-group-delegates";
+import { DbEvent } from "./interfaces/db-events";
 
 export class PersistedEventGroupDelegate
   extends Model<
     InferAttributes<PersistedEventGroupDelegate>,
     InferCreationAttributes<PersistedEventGroupDelegate>
   >
-  implements EventGroupDelegate
+  implements DbEventGroupDelegate
 {
-  declare event: NonAttribute<Event>;
+  declare event: NonAttribute<DbEvent>;
 
-  declare delegateUser: NonAttribute<EventGroupDelegate["delegateUser"]>;
+  declare delegateUser: NonAttribute<DbEventGroupDelegate["delegateUser"]>;
 
-  declare delegateFor: NonAttribute<EventGroupDelegate["delegateFor"]>;
+  declare delegateFor: NonAttribute<DbEventGroupDelegate["delegateFor"]>;
 
   declare eventId: CreationOptional<number>;
 
