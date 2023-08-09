@@ -1,9 +1,20 @@
-import { Decoder, Errors } from "io-ts";
-import { pipe } from "fp-ts/lib/function";
+import { Decoder, Errors, Validation } from "io-ts";
+import { PathReporter } from "io-ts/PathReporter";
+import { flow, pipe } from "fp-ts/lib/function";
 import * as IOE from "fp-ts/lib/IOEither";
+import * as IO from "fp-ts/lib/IO";
+import * as A from "fp-ts/lib/Array";
 import * as Console from "fp-ts/lib/Console";
 
-const logErrors = (errors: Errors) => Console.error(errors);
+const logValidationErrors = <A>(
+  validation: Validation<A>
+): IOE.IOEither<Errors, A> =>
+  pipe(
+    IO.of(validation),
+    IO.chainFirst(
+      flow(PathReporter.report, A.map(Console.error), IO.sequenceArray)
+    )
+  );
 
 // Strict and exact IO-TS decoders rely on the object being have superfluous properties removed
 // to report their properties through Object.getOwnProperties(...).
@@ -20,9 +31,6 @@ export const decodePersistedIOE =
       JSON.stringify,
       JSON.parse,
       decoder.decode,
-      IOE.fromEither,
-      IOE.swap,
-      IOE.chainFirstIOK(logErrors),
-      IOE.swap,
+      logValidationErrors,
       IOE.mapLeft(errHandler)
     );
