@@ -54,6 +54,7 @@ export const createEventMotion =
               description: buildableMotion.description,
               title: buildableMotion.title,
               status: buildableMotion.status,
+              voteDefinition: "",
             },
             {
               transaction: t,

@@ -27,6 +27,8 @@ export class PersistedMotion
   declare description: string;
 
   declare status: string;
+
+  declare voteDefinition: string;
 }
 
 const initMotionModel = (sequelize: Sequelize) =>
@@ -42,6 +44,10 @@ const initMotionModel = (sequelize: Sequelize) =>
         allowNull: true,
       },
       status: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      voteDefinition: {
         type: DataTypes.STRING,
         allowNull: false,
       },

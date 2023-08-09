@@ -4,4 +4,5 @@ export interface DbMotion {
   status: string;
   title: string;
   description: string;
+  voteDefinition: string;
 }
