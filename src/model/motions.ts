@@ -48,18 +48,9 @@ export const createEventMotion =
     pipe(
       TE.tryCatch(
         () =>
-          PersistedMotion.create(
-            {
-              eventId: buildableMotion.eventId,
-              description: buildableMotion.description,
-              title: buildableMotion.title,
-              status: buildableMotion.status,
-              voteDefinition: "",
-            },
-            {
-              transaction: t,
-            }
-          ),
+          PersistedMotion.create(ModelBuildableMotion.encode(buildableMotion), {
+            transaction: t,
+          }),
         (reason) => new Error(String(reason))
       ),
       TE.chainIOEitherKW(dbMotionAsModelMotion)
@@ -68,7 +59,7 @@ export const createEventMotion =
 const applyUpdatesToMotion =
   (updates: ModelMotionUpdates) =>
   (motion: PersistedMotion): PersistedMotion =>
-    motion.set(updates);
+    motion.set(ModelMotionUpdates.encode(updates));
 
 export const updateEventMotion =
   (t: Transaction) =>

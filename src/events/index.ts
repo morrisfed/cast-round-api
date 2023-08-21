@@ -137,6 +137,14 @@ export const createEventMotion = (
           description: buildableMotion.description,
           eventId,
           status: "draft",
+          voteDefinition: {
+            definitionSchemaVersion: 1,
+            roleVotes: [
+              { role: "ADMINISTRATOR", votes: 2 },
+              { role: "GROUP_VOTER", votes: 10 },
+            ],
+            responses: [{ sequence: 5, label: "555" }],
+          },
         })
       )
     );

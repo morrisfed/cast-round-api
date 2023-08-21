@@ -1,4 +1,7 @@
 import * as t from "io-ts";
+import { JsonFromString } from "io-ts-types";
+
+import { ModelRole } from "./model-roles";
 
 const ModelMotionStatus = t.union([
   t.literal("draft"),
@@ -10,16 +13,54 @@ const ModelMotionStatus = t.union([
 ]);
 export type ModelMotionStatus = t.TypeOf<typeof ModelMotionStatus>;
 
+const ModelRoleVotesDefinition = t.strict({
+  role: ModelRole,
+  votes: t.number,
+});
+
+const ModelResponseDefinition = t.strict({
+  sequence: t.number,
+  label: t.string,
+});
+
+const ModelVoteDefinitionSchema1 = t.strict({
+  definitionSchemaVersion: t.literal(1),
+  roleVotes: t.array(ModelRoleVotesDefinition),
+  responses: t.array(ModelResponseDefinition),
+});
+
+const ModelVoteDefinition = ModelVoteDefinitionSchema1;
+
+const ModelVoteDefinitionFromString = t.string.pipe(
+  JsonFromString.pipe(ModelVoteDefinition)
+);
+
 export const ModelMotion = t.strict({
   id: t.number,
   eventId: t.number,
   status: ModelMotionStatus,
   title: t.string,
   description: t.string,
+  voteDefinition: ModelVoteDefinitionFromString,
 });
+
 export type ModelMotion = t.TypeOf<typeof ModelMotion>;
 
-export interface ModelBuildableMotion extends Omit<ModelMotion, "id"> {}
+export const ModelBuildableMotion = t.strict({
+  eventId: t.number,
+  status: ModelMotionStatus,
+  title: t.string,
+  description: t.string,
+  voteDefinition: ModelVoteDefinitionFromString,
+});
+export type ModelBuildableMotion = t.TypeOf<typeof ModelBuildableMotion>;
 
-export interface ModelMotionUpdates
-  extends Partial<Omit<ModelBuildableMotion, "eventId">> {}
+export const ModelMotionUpdates = t.exact(
+  t.partial({
+    status: ModelMotionStatus,
+    title: t.string,
+    description: t.string,
+    voteDefinition: ModelVoteDefinitionFromString,
+  })
+);
+export type ModelMotionUpdates = t.TypeOf<typeof ModelMotionUpdates>;

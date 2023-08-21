@@ -9,6 +9,7 @@ import {
   isIndividualAccountType,
 } from "../accounts/accountTypes";
 import { User } from "../interfaces/users";
+import { ModelRole } from "../model/interfaces/model-roles";
 
 export type Permission =
   | "IMPORT_ACCOUNTS_CSV"
@@ -28,20 +29,7 @@ export type Permission =
   | "TELLORS_READWRITE"
   | "MOTIONS_READ_ALL";
 
-export type Role =
-  | "ADMINISTRATOR"
-  | "MEMBER"
-  | "GROUP_MEMBER"
-  | "INDIVIDUAL_MEMBER"
-  | "DELEGATE"
-  | "GROUP_DELEGATE"
-  | "GROUP_VOTER"
-  | "INDIVIDUAL_VOTER"
-  | "VOTER"
-  | "TELLOR"
-  | "COMMITTEE";
-
-const rolePermissions: Record<Role, Array<Permission>> = {
+const rolePermissions: Record<ModelRole, Array<Permission>> = {
   ADMINISTRATOR: ["IMPORT_ACCOUNTS_CSV", "ACCOUNTS_READ_ALL"],
   COMMITTEE: [
     "ACCOUNTS_READ_ALL",
@@ -114,7 +102,7 @@ export const isVotorRole = (user: User | undefined): boolean =>
 export const isCommitteeRole = (user: User | undefined): boolean =>
   user?.account?.type === "committee";
 
-export const getRoles = (user: User): Role[] =>
+export const getRoles = (user: User): ModelRole[] =>
   A.compact([
     isAdministratorRole(user) ? O.some("ADMINISTRATOR") : O.none,
     isMemberRole(user) ? O.some("MEMBER") : O.none,
@@ -129,7 +117,7 @@ export const getRoles = (user: User): Role[] =>
     isVotorRole(user) ? O.some("VOTER") : O.none,
   ]);
 
-const getPermissionsForRole = (role: Role): Permission[] =>
+const getPermissionsForRole = (role: ModelRole): Permission[] =>
   rolePermissions[role];
 
 const getTransitivePermissions = (permission: Permission): Permission[] =>
