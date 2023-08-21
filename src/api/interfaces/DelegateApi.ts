@@ -1,6 +1,6 @@
-import { LinkUserDetails } from "../../interfaces/users";
+import { LinkUserDetailsExpanded } from "../../interfaces/users";
 
-interface DelegateResponse extends LinkUserDetails {}
+interface DelegateResponse extends LinkUserDetailsExpanded {}
 
 export interface GroupDelegateResponse {
   delegateUserId: string;

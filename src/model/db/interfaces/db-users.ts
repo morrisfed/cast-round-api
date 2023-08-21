@@ -6,7 +6,7 @@ export interface DbAccountUserDetails {
   isAdmin: boolean;
 }
 
-export interface DbLinkUserDetailsNoExpansion {
+export interface DbLinkUserDetails {
   id: string;
   label: string;
   type: string;
@@ -15,7 +15,7 @@ export interface DbLinkUserDetailsNoExpansion {
   createdByUserId?: string;
 }
 
-export interface DbLinkUserDetails extends DbLinkUserDetailsNoExpansion {
+export interface DbLinkUserDetailsExpanded extends DbLinkUserDetails {
   createdBy: DbUser;
   linkFor: DbAccountUserDetails;
 }
@@ -26,5 +26,5 @@ export interface DbUser {
   source: string;
 
   account?: DbAccountUserDetails;
-  link?: DbLinkUserDetailsNoExpansion;
+  link?: DbLinkUserDetails;
 }

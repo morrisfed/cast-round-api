@@ -1,7 +1,7 @@
 import * as t from "io-ts";
 
 import { ModelEvent } from "./model-events";
-import { ModelLinkUserDetailsNoExpansion } from "./model-users";
+import { ModelLinkUserDetails } from "./model-users";
 
 export const ModelEventTellorNoExpansion = t.strict({
   eventId: t.number,
@@ -16,7 +16,7 @@ export const ModelEventTellor = t.strict({
   tellorUserId: t.string,
 
   event: ModelEvent,
-  tellorUser: ModelLinkUserDetailsNoExpansion,
+  tellorUser: ModelLinkUserDetails,
 });
 export type ModelEventTellor = t.TypeOf<typeof ModelEventTellor>;
 

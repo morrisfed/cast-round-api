@@ -109,7 +109,7 @@ passport.serializeUser<SessionUser>((user, done) =>
 
 passport.deserializeUser<SessionUser>(({ id, authVia }, done) => {
   const deserializeUserTask = pipe(
-    getUser(id),
+    getUser(id, authVia),
     TE.map(userInfoToExpressUser(authVia)),
     TE.fold(
       (err) => T.of(done(err)),

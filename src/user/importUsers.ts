@@ -4,7 +4,7 @@ import { pipe } from "fp-ts/lib/function";
 import { Monoid } from "fp-ts/lib/Monoid";
 
 import { Transaction } from "sequelize";
-import { AccountUser } from "../interfaces/users";
+import { AccountUserWithDetails } from "../interfaces/users";
 import transactionalTaskEither from "../model/transaction";
 import {
   createAccountUser,
@@ -31,7 +31,7 @@ const monoidImportResult: Monoid<ImportResult> = {
 const processImportedUserAsUpdate =
   (t: Transaction) =>
   (
-    importableUser: AccountUser
+    importableUser: AccountUserWithDetails
   ): TE.TaskEither<Error | "not-found", ImportResult> =>
     pipe(
       updateUserWithAccount(t)(importableUser.id, importableUser),
@@ -45,7 +45,7 @@ const processImportedUserAsUpdate =
 
 const processImportedUserAsCreate =
   (t: Transaction) =>
-  (importedUser: AccountUser): TE.TaskEither<Error, ImportResult> =>
+  (importedUser: AccountUserWithDetails): TE.TaskEither<Error, ImportResult> =>
     pipe(
       TE.of(importedUser),
       TE.chain(createAccountUser(t)),
@@ -54,7 +54,7 @@ const processImportedUserAsCreate =
 
 const createUserIfNotFound =
   (t: Transaction) =>
-  (importedUser: AccountUser) =>
+  (importedUser: AccountUserWithDetails) =>
   (err: Error | "not-found") => {
     if (err === "not-found") {
       return processImportedUserAsCreate(t)(importedUser);
@@ -64,14 +64,16 @@ const createUserIfNotFound =
 
 const importUser =
   (t: Transaction) =>
-  (importableUser: AccountUser): TE.TaskEither<Error, ImportResult> =>
+  (
+    importableUser: AccountUserWithDetails
+  ): TE.TaskEither<Error, ImportResult> =>
     pipe(
       processImportedUserAsUpdate(t)(importableUser),
       TE.orElse(createUserIfNotFound(t)(importableUser))
     );
 
 export const importUsers = (
-  importableUsers: readonly AccountUser[]
+  importableUsers: readonly AccountUserWithDetails[]
 ): TE.TaskEither<Error, ImportResult> =>
   transactionalTaskEither((t) =>
     pipe(

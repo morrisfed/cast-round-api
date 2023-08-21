@@ -1,9 +1,9 @@
 import { DbEvent } from "./db-events";
-import { DbAccountUserDetails, DbLinkUserDetails } from "./db-users";
+import { DbAccountUserDetails, DbLinkUserDetailsExpanded } from "./db-users";
 
 export interface DbEventGroupDelegate {
   event: DbEvent;
-  delegateUser: DbLinkUserDetails;
+  delegateUser: DbLinkUserDetailsExpanded;
   delegateFor: DbAccountUserDetails;
 
   eventId: number;

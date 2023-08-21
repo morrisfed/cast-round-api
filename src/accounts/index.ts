@@ -2,14 +2,14 @@ import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 
 import {
-  AccountUser,
+  AccountUserWithDetails,
   AccountUserDetails,
   LinkUserDetailsWithCreatedBy,
   User,
 } from "../interfaces/users";
 import {
   findAccountUserWithLinksById,
-  findAllAccounts,
+  findAllAccountsUserDetails,
 } from "../model/account-users";
 import transactionalTaskEither from "../model/transaction";
 import { hasAccountsReadAllPermission } from "../user/permissions";
@@ -19,7 +19,7 @@ export const getAccounts = (
   user: User
 ): TE.TaskEither<Error | "forbidden", readonly AccountUserDetails[]> => {
   if (hasAccountsReadAllPermission(user)) {
-    return transactionalTaskEither((t) => findAllAccounts(t));
+    return transactionalTaskEither((t) => findAllAccountsUserDetails(t));
   }
   return TE.left("forbidden");
 };
@@ -27,7 +27,7 @@ export const getAccounts = (
 export const getAccountUser = (
   user: User,
   accountId: string
-): TE.TaskEither<Error | "forbidden" | "not-found", AccountUser> => {
+): TE.TaskEither<Error | "forbidden" | "not-found", AccountUserWithDetails> => {
   if (hasAccountsReadAllPermission(user)) {
     return transactionalTaskEither((t) =>
       pipe(

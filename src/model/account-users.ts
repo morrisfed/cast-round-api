@@ -14,12 +14,13 @@ import {
   savePersistedUser,
 } from "./_internal/user";
 import {
-  ModelAccountUser,
   ModelAccountUserDetails,
   ModelAccountUserDetailsUpdates,
-  ModelAccountUserUpdates,
+  ModelAccountUserWithDetailsUpdates,
   ModelAccountUserWithLinks,
   ModelBuildableAccountUser,
+  ModelAccountUser,
+  ModelAccountUserWithDetails,
 } from "./interfaces/model-users";
 import { decodePersistedIOE } from "./_internal/utils";
 
@@ -53,6 +54,17 @@ const persistedAccountUserModelAccountUser = (
     persistedAccountUser
   );
 
+const persistedAccountUserWithDetailsAsModelAccountUserWithDetails = (
+  persistedAccountUser: PersistedUserWithAccount
+): IOE.IOEither<Error, ModelAccountUserWithDetails> =>
+  decodePersistedIOE<
+    PersistedUserWithAccount,
+    ModelAccountUserWithDetails,
+    Error
+  >(ModelAccountUserWithDetails)(
+    () => new Error("Invalid user info read from database")
+  )(persistedAccountUser);
+
 const persistedAccountUserWithLinksAsModelAccountUserWithLinks = (
   persistedAccountUser: PersistedUserWithAccount
 ): IOE.IOEither<Error, ModelAccountUserWithLinks> =>
@@ -64,7 +76,7 @@ const persistedAccountUserWithLinksAsModelAccountUserWithLinks = (
     () => new Error("Invalid user info read from database")
   )(persistedAccountUser);
 
-export const findAllAccounts = (
+export const findAllAccountsUserDetails = (
   t: Transaction
 ): TE.TaskEither<Error, ModelAccountUserDetails[]> =>
   pipe(
@@ -76,6 +88,18 @@ export const findAllAccounts = (
       persistedAccountUserDetailsArrayAsModelAccountUserDetailsArray
     )
   );
+
+export const findAccountUserWithDetailsById =
+  (t: Transaction) =>
+  (
+    id: string
+  ): TE.TaskEither<Error | "not-found", ModelAccountUserWithDetails> =>
+    pipe(
+      findPersistedUserWithAccountById(t)(id),
+      TE.chainIOEitherKW(
+        persistedAccountUserWithDetailsAsModelAccountUserWithDetails
+      )
+    );
 
 export const findAccountUserWithLinksById =
   (t: Transaction) =>
@@ -131,11 +155,11 @@ const createPersistedUserWithAccount =
     );
 
 export const createAccountUser =
-  (t: Transaction) => (userWithAccount: ModelAccountUser) =>
+  (t: Transaction) => (userWithAccount: ModelBuildableAccountUser) =>
     pipe(createPersistedUserWithAccount(t)(userWithAccount));
 
 const applyUpdatesToPersistedAccountUser =
-  (updates: Omit<ModelAccountUserUpdates, "account">) =>
+  (updates: Omit<ModelAccountUserWithDetailsUpdates, "account">) =>
   (user: PersistedUserWithAccount): PersistedUserWithAccount =>
     user.set(updates);
 
@@ -156,7 +180,7 @@ export const updateUserWithAccount =
   (t: Transaction) =>
   (
     id: string,
-    updates: ModelAccountUserUpdates
+    updates: ModelAccountUserWithDetailsUpdates
   ): TE.TaskEither<Error | "not-found", ModelAccountUser> =>
     pipe(
       findPersistedUserWithAccountById(t)(id),

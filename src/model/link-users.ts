@@ -15,7 +15,8 @@ import { deletePersistedUser, findPersistedUser } from "./_internal/user";
 import {
   ModelBuildableLinkUser,
   ModelLinkUserDetailsWithCreatedBy,
-  ModelLinkUserNoExpansion,
+  ModelLinkUser,
+  ModelLinkUserWithDetails,
 } from "./interfaces/model-users";
 import { decodePersistedIOE } from "./_internal/utils";
 
@@ -37,11 +38,18 @@ export const findAll = (
     (reason) => new Error(String(reason))
   );
 
-const persistedLinkUserModelLinkUserNoExpansion = (
+const persistedLinkUserModelLinkUser = (
   persistedLinkUser: PersistedUserAsLinkUser
-): IOE.IOEither<Error, ModelLinkUserNoExpansion> =>
-  decodePersistedIOE<PersistedUserAsLinkUser, ModelLinkUserNoExpansion, Error>(
-    ModelLinkUserNoExpansion
+): IOE.IOEither<Error, ModelLinkUser> =>
+  decodePersistedIOE<PersistedUserAsLinkUser, ModelLinkUser, Error>(
+    ModelLinkUser
+  )(() => new Error("Invalid user info read from database"))(persistedLinkUser);
+
+const persistedLinkUserModelLinkUserWithDetails = (
+  persistedLinkUser: PersistedUserAsLinkUser
+): IOE.IOEither<Error, ModelLinkUserWithDetails> =>
+  decodePersistedIOE<PersistedUserAsLinkUser, ModelLinkUserWithDetails, Error>(
+    ModelLinkUserWithDetails
   )(() => new Error("Invalid user info read from database"))(persistedLinkUser);
 
 const persistedLinkUserDetailsAsModelLinkUserDetailsWithCreatedBy = (
@@ -118,10 +126,10 @@ export const createLinkUser =
   (t: Transaction) =>
   (
     delegateUserInfo: ModelBuildableLinkUser
-  ): TE.TaskEither<Error, ModelLinkUserNoExpansion> =>
+  ): TE.TaskEither<Error, ModelLinkUser> =>
     pipe(
       createPersistedUserAsLinkUser(t)(delegateUserInfo),
-      TE.chainIOEitherKW(persistedLinkUserModelLinkUserNoExpansion)
+      TE.chainIOEitherKW(persistedLinkUserModelLinkUser)
     );
 
 export const deleteLinkUser =
@@ -161,7 +169,7 @@ export const findLinkUsersDetailsWithCreatedByLinkUserForAccountId =
 
 export const findLinkUserById =
   (t: Transaction) =>
-  (id: string): TE.TaskEither<Error | "not-found", ModelLinkUserNoExpansion> =>
+  (id: string): TE.TaskEither<Error | "not-found", ModelLinkUserWithDetails> =>
     pipe(
       findPersistedUser(["link"])(t)(id),
       TE.chainW(
@@ -170,5 +178,5 @@ export const findLinkUserById =
           () => new Error(`Data error: user ${id} has no link`)
         )
       ),
-      TE.chainIOEitherKW(persistedLinkUserModelLinkUserNoExpansion)
+      TE.chainIOEitherKW(persistedLinkUserModelLinkUserWithDetails)
     );

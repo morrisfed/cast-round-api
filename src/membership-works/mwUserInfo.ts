@@ -3,13 +3,13 @@ import * as TE from "fp-ts/lib/TaskEither";
 import * as ROA from "fp-ts/lib/ReadonlyArray";
 
 import { MembershipWorksUserProfile } from "./MembershipWorksTypes";
-import { AccountUser } from "../interfaces/users";
+import { AccountUserWithDetails } from "../interfaces/users";
 import { getMwUserProfileForToken } from "./fetchMwUserProfile";
 import { bufferToMwUserProfiles } from "./readMwCsvBuffer";
 
 export const mwUserProfileAsUserInfo = (
   userProfile: MembershipWorksUserProfile
-): AccountUser => ({
+): AccountUserWithDetails => ({
   id: `mw-${userProfile.account_id}`,
   enabled: true,
   source: "account",
@@ -27,7 +27,7 @@ export const fetchUserInfoForMwAccessToken = (accessToken: string) =>
 
 export const csvBufferToUserInfos = (
   buffer: Buffer
-): TE.TaskEither<Error, readonly AccountUser[]> =>
+): TE.TaskEither<Error, readonly AccountUserWithDetails[]> =>
   pipe(
     bufferToMwUserProfiles(buffer),
     TE.map(ROA.map(mwUserProfileAsUserInfo))

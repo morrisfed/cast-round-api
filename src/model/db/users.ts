@@ -15,8 +15,8 @@ import {
 
 import {
   DbAccountUserDetails,
+  DbLinkUserDetailsExpanded,
   DbLinkUserDetails,
-  DbLinkUserDetailsNoExpansion,
   DbUser,
 } from "./interfaces/db-users";
 
@@ -39,7 +39,7 @@ export class PersistedUser
 
   declare account?: InferAttributes<PersistedAccountUserDetails>;
 
-  declare link?: DbLinkUserDetailsNoExpansion;
+  declare link?: DbLinkUserDetails;
 
   declare createAccount: HasOneCreateAssociationMixin<PersistedAccountUserDetails>;
 
@@ -77,7 +77,7 @@ export class PersistedLinkUserDetails
     InferAttributes<PersistedLinkUserDetails>,
     InferCreationAttributes<PersistedLinkUserDetails>
   >
-  implements DbLinkUserDetails
+  implements DbLinkUserDetailsExpanded
 {
   declare id: string;
 

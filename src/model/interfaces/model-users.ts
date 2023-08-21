@@ -1,7 +1,7 @@
 import * as t from "io-ts";
 import { MembershipWorksUserType } from "../../membership-works/MembershipWorksTypes";
 
-const ModelUserSource = t.union([t.literal("account"), t.literal("link")]);
+// const ModelUserSource = t.union([t.literal("account"), t.literal("link")]);
 
 const LinkUserType = t.union([
   t.literal("group-delegate"),
@@ -17,53 +17,31 @@ export const ModelAccountUserDetails = t.strict({
 });
 export type ModelAccountUserDetails = t.TypeOf<typeof ModelAccountUserDetails>;
 
-export const ModelLinkUserDetailsNoExpansion = t.strict({
+export const ModelLinkUserDetails = t.strict({
   id: t.string,
   label: t.string,
   type: LinkUserType,
   linkForUserId: t.union([t.string, t.undefined, t.null]),
-  createdByUserId: t.union([t.string, t.undefined]),
+  createdByUserId: t.string,
 });
-export type ModelLinkUserDetailsNoExpansion = t.TypeOf<
-  typeof ModelLinkUserDetailsNoExpansion
->;
+export type ModelLinkUserDetails = t.TypeOf<typeof ModelLinkUserDetails>;
 
 export const ModelAccountUser = t.strict({
   id: t.string,
   enabled: t.boolean,
   source: t.literal("account"),
-  account: ModelAccountUserDetails,
 });
 export type ModelAccountUser = t.TypeOf<typeof ModelAccountUser>;
 
-export const ModelLinkUserNoExpansion = t.strict({
+export const ModelLinkUser = t.strict({
   id: t.string,
   enabled: t.boolean,
   source: t.literal("link"),
 });
-export type ModelLinkUserNoExpansion = t.TypeOf<
-  typeof ModelLinkUserNoExpansion
->;
+export type ModelLinkUser = t.TypeOf<typeof ModelLinkUser>;
 
-export const ModelUserNoExpansion = t.exact(
-  t.type({
-    id: t.string,
-    enabled: t.boolean,
-    source: ModelUserSource,
-  })
-);
-
-export const ModelUser = t.union([ModelAccountUser, ModelLinkUserNoExpansion]);
+export const ModelUser = t.union([ModelAccountUser, ModelLinkUser]);
 export type ModelUser = t.TypeOf<typeof ModelUser>;
-
-export const ModelLinkUserDetails = t.strict({
-  id: t.string,
-  label: t.string,
-  type: LinkUserType,
-  linkForUserId: t.string,
-  createdByUserId: t.string,
-});
-export type ModelLinkUserDetails = t.TypeOf<typeof ModelLinkUserDetails>;
 
 export const ModelAccountUserDetailsWithLinks = t.strict({
   id: t.string,
@@ -87,13 +65,25 @@ export type ModelAccountUserWithLinks = t.TypeOf<
   typeof ModelAccountUserWithLinks
 >;
 
-export const ModelLinkUser = t.strict({
+export const ModelAccountUserWithDetails = t.strict({
+  id: t.string,
+  enabled: t.boolean,
+  source: t.literal("account"),
+  account: ModelAccountUserDetails,
+});
+export type ModelAccountUserWithDetails = t.TypeOf<
+  typeof ModelAccountUserWithDetails
+>;
+
+export const ModelLinkUserWithDetails = t.strict({
   id: t.string,
   enabled: t.boolean,
   source: t.literal("link"),
   link: ModelLinkUserDetails,
 });
-export type ModelLinkUser = t.TypeOf<typeof ModelLinkUser>;
+export type ModelLinkUserWithDetails = t.TypeOf<
+  typeof ModelLinkUserWithDetails
+>;
 
 export const ModelLinkUserDetailsWithCreatedBy = t.strict({
   label: t.string,
@@ -116,17 +106,18 @@ export interface ModelBuildableLinkUserDetails {
 }
 
 export interface ModelBuildableAccountUser
-  extends Omit<ModelAccountUser, "account"> {
+  extends Omit<ModelAccountUserWithDetails, "account"> {
   account: ModelBuildableAccountUserDetails;
 }
 
 export interface ModelAccountUserDetailsUpdates
   extends Partial<Omit<ModelAccountUserDetails, "id">> {}
-export interface ModelAccountUserUpdates
-  extends Partial<Omit<ModelAccountUser, "id" | "account">> {
+export interface ModelAccountUserWithDetailsUpdates
+  extends Partial<Omit<ModelAccountUserWithDetails, "id" | "account">> {
   account: ModelAccountUserDetailsUpdates;
 }
 
-export interface ModelBuildableLinkUser extends Omit<ModelLinkUser, "link"> {
+export interface ModelBuildableLinkUser
+  extends Omit<ModelLinkUserWithDetails, "link"> {
   link: ModelBuildableLinkUserDetails;
 }

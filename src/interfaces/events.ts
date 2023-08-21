@@ -1,4 +1,4 @@
-import { AccountUserDetails, LinkUserDetailsNoExpansion } from "./users";
+import { AccountUserDetails, LinkUserDetails } from "./users";
 import { Motion } from "./motions";
 
 export interface Event {
@@ -16,7 +16,7 @@ export interface EventWithMotions extends Event {
 export interface BuildableEvent extends Omit<Event, "id"> {}
 
 export interface EventGroupDelegate {
-  delegateUser: LinkUserDetailsNoExpansion;
+  delegateUser: LinkUserDetails;
   delegateFor: AccountUserDetails;
 
   eventId: number;
