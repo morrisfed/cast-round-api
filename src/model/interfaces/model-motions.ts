@@ -1,5 +1,5 @@
 import * as t from "io-ts";
-import { JsonFromString } from "io-ts-types";
+import { JsonFromString, withFallback } from "io-ts-types";
 
 import { ModelRole } from "./model-roles";
 
@@ -28,6 +28,13 @@ const ModelVoteDefinitionSchema1 = t.strict({
   roleVotes: t.array(ModelRoleVotesDefinition),
   responses: t.array(ModelResponseDefinition),
 });
+type ModelVoteDefinitionSchema1 = t.TypeOf<typeof ModelVoteDefinitionSchema1>;
+
+const defaultVoteDefinitionSchema: ModelVoteDefinitionSchema1 = {
+  definitionSchemaVersion: 1,
+  roleVotes: [],
+  responses: [],
+};
 
 const ModelVoteDefinition = ModelVoteDefinitionSchema1;
 
@@ -41,7 +48,10 @@ export const ModelMotion = t.strict({
   status: ModelMotionStatus,
   title: t.string,
   description: t.string,
-  voteDefinition: ModelVoteDefinitionFromString,
+  voteDefinition: withFallback(
+    ModelVoteDefinitionFromString,
+    defaultVoteDefinitionSchema
+  ),
 });
 
 export type ModelMotion = t.TypeOf<typeof ModelMotion>;
