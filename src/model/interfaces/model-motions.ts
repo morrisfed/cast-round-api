@@ -20,6 +20,7 @@ const ModelRoleVotesDefinition = t.strict({
 
 const ModelResponseDefinition = t.strict({
   sequence: t.number,
+  code: t.string,
   label: t.string,
 });
 
