@@ -48,7 +48,7 @@ const initMotionModel = (sequelize: Sequelize) =>
         allowNull: false,
       },
       voteDefinition: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(4000),
         allowNull: false,
       },
     },
