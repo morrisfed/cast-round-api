@@ -10,6 +10,7 @@ import {
 } from "sequelize";
 
 import { DbMotion } from "./interfaces/db-motions";
+import { DbMotionVote } from "./interfaces/db-motion-votes";
 
 export class PersistedMotion
   extends Model<
@@ -29,6 +30,8 @@ export class PersistedMotion
   declare status: string;
 
   declare voteDefinition: string;
+
+  declare votes?: DbMotionVote[];
 }
 
 const initMotionModel = (sequelize: Sequelize) =>

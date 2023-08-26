@@ -35,7 +35,9 @@ import {
   Motion,
   MotionStatus,
   MotionUpdates,
+  MotionWithOptionalVotes,
 } from "../interfaces/motions";
+import { findAllMotionsVotesForOnBehalfUser } from "../model/motion-votes";
 
 const showMotionForUser = (user: User) => (motion: Motion) =>
   hasMotionsReadAllPermission(user) ||
@@ -177,12 +179,19 @@ export const setEventMotionStatus = (
   return TE.left("forbidden");
 };
 
-export const getEventMotion = (
-  motionId: number
-): TE.TaskEither<Error | "not-found", Motion> =>
-  transactionalTaskEither((t) =>
-    pipe(
-      findMotionById(t)(motionId),
-      TE.chainW(TE.fromNullable("not-found" as const))
-    )
-  );
+export const getEventMotion =
+  (user: User) =>
+  (
+    motionId: number
+  ): TE.TaskEither<Error | "not-found", MotionWithOptionalVotes> =>
+    transactionalTaskEither((t) =>
+      pipe(
+        findMotionById(t)(motionId),
+        TE.chainW(TE.fromNullable("not-found" as const)),
+        TE.bindTo("motion"),
+        TE.bind("votes", ({ motion }) =>
+          findAllMotionsVotesForOnBehalfUser(t)(user.id)(motion.id)
+        ),
+        TE.map(({ motion, votes }) => ({ ...motion, votes }))
+      )
+    );

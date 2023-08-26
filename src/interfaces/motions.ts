@@ -1,3 +1,4 @@
+import { ModelMotionVote } from "../model/interfaces/model-motion-votes";
 import {
   ModelMotion,
   ModelMotionStatus,
@@ -6,6 +7,10 @@ import {
 export type MotionStatus = ModelMotionStatus;
 
 export interface Motion extends ModelMotion {}
+
+export interface MotionWithOptionalVotes extends Motion {
+  votes?: readonly ModelMotionVote[];
+}
 
 export interface BuildableMotion extends Omit<Motion, "id" | "status"> {}
 

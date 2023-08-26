@@ -339,7 +339,7 @@ eventRouter.get<{ eventId: number; motionId: number }, GetMotionResponse>(
   async (req, res) => {
     if (req.isAuthenticated()) {
       const getEventMotionResponseTask = pipe(
-        getEventMotion(req.params.motionId),
+        getEventMotion(req.user)(req.params.motionId),
         TE.map((motion) => ({ motion })),
         standardJsonResponseFold(res)
       );

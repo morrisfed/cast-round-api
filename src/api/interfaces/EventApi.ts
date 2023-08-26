@@ -7,6 +7,7 @@ import {
   MotionStatus,
   MotionUpdates,
 } from "../../interfaces/motions";
+import { GetMotionVotesResponse } from "./MotionVoteApi";
 
 interface EventResponse extends Event {}
 
@@ -38,7 +39,9 @@ export interface PatchEventResponse {
   event: Event;
 }
 
-export interface MotionResponse extends Motion {}
+export interface MotionResponse extends Motion {
+  votes?: GetMotionVotesResponse["votes"];
+}
 
 export interface GetMotionResponse {
   motion: MotionResponse;

@@ -13,6 +13,7 @@ import {
   initEventGroupDelegate,
 } from "./event-group-delegates";
 import { PersistedEventTellor, initEventTellor } from "./event-tellors";
+import { PersistedMotionVote, initMotionVote } from "./motion-votes";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,
@@ -30,6 +31,7 @@ export const initDb = async () => {
   initUser(sequelize);
   initEvent(sequelize);
   initMotion(sequelize);
+  initMotionVote(sequelize);
   initEventGroupDelegate(sequelize);
   initEventTellor(sequelize);
 
@@ -123,6 +125,17 @@ export const initDb = async () => {
       field: "delegateForUserId",
       name: "delegateForUserId",
     },
+    targetKey: "id",
+  });
+
+  PersistedMotion.hasMany(PersistedMotionVote, {
+    as: "votes",
+    foreignKey: { allowNull: false, field: "motionId", name: "motionId" },
+    sourceKey: "id",
+  });
+  PersistedMotionVote.belongsTo(PersistedMotion, {
+    as: "motion",
+    foreignKey: { allowNull: false, field: "motionId", name: "motionId" },
     targetKey: "id",
   });
 

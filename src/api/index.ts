@@ -6,6 +6,7 @@ import { profileRouter } from "./profile";
 import { delegatesRouter } from "./delegates";
 import { tellorsRouter } from "./tellors";
 import { eventsRouter } from "./events";
+import { motionVoteRouter } from "./motion-vote";
 
 const apiRouter = express.Router();
 
@@ -26,5 +27,6 @@ apiRouter.use("/accounts", accountsRouter);
 apiRouter.use("/delegates", delegatesRouter);
 apiRouter.use("/tellors", tellorsRouter);
 apiRouter.use("/events", eventsRouter);
+apiRouter.use("/motionvote", motionVoteRouter);
 
 export default apiRouter;
