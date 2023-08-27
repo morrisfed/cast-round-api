@@ -15,26 +15,31 @@ import {
   GetMotionVotesResponse,
 } from "./interfaces/MotionVoteApi";
 import {
-  getUserMotionVotes,
-  userSubmitOwnVotes,
+  getMemberMotionVotes,
+  submitMotionVotes,
 } from "../votes/vote-submission";
 
-const MotionIdObject = t.strict({
+const MotionIdAndMemberIdObject = t.strict({
   motionId: IntFromString,
+  memberId: t.string,
 });
-type MotionIdObject = t.TypeOf<typeof MotionIdObject>;
+type MotionIdAndMemberIdObject = t.TypeOf<typeof MotionIdAndMemberIdObject>;
 
 export const motionVoteRouter = express.Router({ mergeParams: true });
 
-motionVoteRouter.get<MotionIdObject, GetMotionVotesResponse>(
-  "/:motionId",
+motionVoteRouter.get<MotionIdAndMemberIdObject, GetMotionVotesResponse>(
+  "/:motionId/:memberId",
   async (req, res) => {
     if (req.isAuthenticated()) {
       const getMotionVotesResponseTask = pipe(
-        MotionIdObject.decode(req.params),
+        MotionIdAndMemberIdObject.decode(req.params),
         TE.fromEither,
-        TE.map((ids) => ids.motionId),
-        TE.chainW(getUserMotionVotes(req.user)),
+        TE.chainW((ids) =>
+          getMemberMotionVotes(req.user.loggedInUser)(
+            ids.motionId,
+            ids.memberId
+          )
+        ),
         TE.fold(
           (err) => {
             if (err === "not-found") {
@@ -60,23 +65,24 @@ motionVoteRouter.get<MotionIdObject, GetMotionVotesResponse>(
 );
 
 motionVoteRouter.post<
-  MotionIdObject,
+  MotionIdAndMemberIdObject,
   SubmitMotionVotesResponse,
   SubmitMotionVotesRequest
->("/:motionId", async (req, res) => {
+>("/:motionId/:memberId", async (req, res) => {
   if (req.isAuthenticated()) {
     const submitMotionVoteResponseTask = pipe(
       E.Do,
-      E.bind("ids", () => MotionIdObject.decode(req.params)),
+      E.bind("ids", () => MotionIdAndMemberIdObject.decode(req.params)),
       E.bind("submitMotionVoteRequest", () =>
         SubmitMotionVotesRequest.decode(req.body)
       ),
       E.mapLeft(() => "bad-request"),
       TE.fromEither,
       TE.chainW(({ ids, submitMotionVoteRequest }) =>
-        userSubmitOwnVotes(
-          req.user,
+        submitMotionVotes(
+          req.user.loggedInUser,
           ids.motionId,
+          ids.memberId,
           submitMotionVoteRequest.votes
         )
       ),

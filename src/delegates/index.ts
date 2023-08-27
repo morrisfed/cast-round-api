@@ -104,7 +104,7 @@ export const createEventGroupDelegate =
             )
           ),
           TE.bindW("event", () => getEvent(user, createRequest.eventId)),
-          TE.bindW("linkUser", () => {
+          TE.bindW("linkUser", ({ groupAccount, event }) => {
             const id = randomUUID();
             const linkUser: BuildableLinkUser = {
               id,
@@ -114,8 +114,13 @@ export const createEventGroupDelegate =
                 id,
                 label: createRequest.label,
                 type: "group-delegate",
-                linkForUserId: createRequest.delegateForAccountUserId,
                 createdByUserId: user.id,
+                info: {
+                  infoSchemaVersion: 1,
+                  delegateForGroupId: groupAccount.id,
+                  delegateForGroupName: groupAccount.name,
+                  delegateForEventId: event.id,
+                },
               },
             };
             return createLinkUser(t)(linkUser);

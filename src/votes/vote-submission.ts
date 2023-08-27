@@ -9,7 +9,7 @@ import * as SEMI from "fp-ts/Semigroup";
 
 import { Transaction } from "sequelize";
 
-import { User } from "../interfaces/users";
+import { LoggedInUser, User } from "../interfaces/users";
 import {
   ModelBuildableMotionVote,
   ModelMotionVote,
@@ -22,6 +22,8 @@ import {
   deleteMotionVotesForOnBehalfUser,
   findAllMotionsVotesForOnBehalfUser,
 } from "../model/motion-votes";
+import { findEventGroupDelegateByLinkAndEvent } from "../model/event-group-delegates";
+import { findEventTellorByEventAndTellorUser } from "../model/event-tellors";
 
 export interface Vote {
   code: string;
@@ -39,13 +41,14 @@ export interface VoteWithUserIds extends VoteWithMotionId {
 
 const votesToBuildableMotionVotes =
   (user: User) =>
+  (onBehalfOfUserId: string) =>
   (votes: readonly Vote[]) =>
   (motion: ModelMotion): ModelBuildableMotionVote[] =>
     votes.map((vote) => ({
       responseCode: vote.code,
       votes: vote.count,
       motionId: motion.id,
-      onBehalfOfUserId: user.id,
+      onBehalfOfUserId,
       submittedByUserId: user.id,
     }));
 
@@ -57,8 +60,8 @@ const createMotionVotes =
     ROA.traverse(TE.ApplicativePar)(createMotionVote(t))(motionVotes);
 
 const clearPreviousVotes =
-  (t: Transaction) => (user: User) => (motion: ModelMotion) =>
-    deleteMotionVotesForOnBehalfUser(t)(user.id)(motion.id);
+  (t: Transaction) => (onBehalfOfUserId: string) => (motion: ModelMotion) =>
+    deleteMotionVotesForOnBehalfUser(t)(onBehalfOfUserId)(motion.id);
 
 const ordResponseCode: ORD.Ord<string> = Str.Ord;
 
@@ -94,18 +97,96 @@ const deduplicateVoteResponses = (votes: Vote[]) =>
     ROA.map(mergeVotes)
   );
 
-export const getUserMotionVotes =
-  (user: User) =>
-  (
-    motionId: number
-  ): TE.TaskEither<Error | "not-found", readonly ModelMotionVote[]> =>
-    transactionalTaskEither((t) =>
-      findAllMotionsVotesForOnBehalfUser(t)(user.id)(motionId)
+// Checks whether the given user has permission to submit the given votes
+const userCanSubmitVotesForMember =
+  (t: Transaction) =>
+  (user: LoggedInUser) =>
+  (memberId: string) =>
+  (motion: ModelMotion): TE.TaskEither<Error, boolean> => {
+    // If the current user is a member, they can only submit votes on their own behalf.
+    if (user.source === "account") {
+      return TE.right(user.id === memberId);
+    }
+
+    if (user.link.type === "group-delegate") {
+      // If the current user is a group delegate, they can only submit votes for events they are linked to.
+      return pipe(
+        findEventGroupDelegateByLinkAndEvent(t)(motion.eventId)(user.id),
+        TE.map(
+          (eventGroupDelegate) =>
+            eventGroupDelegate.delegateForUserId === memberId
+        ),
+        TE.orElse((e) => (e === "not-found" ? TE.right(false) : TE.left(e)))
+      );
+    }
+
+    // If the current user is a tellor, they can only submit votes for events they are linked to, but they can submit votes on behalf of any member.
+    return pipe(
+      findEventTellorByEventAndTellorUser(t)(motion.eventId)(user.id),
+      TE.map(() => true),
+      TE.orElse((e) => (e === "not-found" ? TE.right(false) : TE.left(e)))
+    );
+  };
+
+const userCanReadVotesForMember =
+  (t: Transaction) =>
+  (user: LoggedInUser) =>
+  (memberId: string) =>
+  (motion: ModelMotion): TE.TaskEither<Error, boolean> =>
+    userCanSubmitVotesForMember(t)(user)(memberId)(motion);
+
+// If the logged in user is not permitted to submit votes on behalf of the given member then return a "forbidden" error.
+const forbiddenErrorIfUserCannotSubmitForMember =
+  (t: Transaction) =>
+  (user: LoggedInUser) =>
+  (memberId: string) =>
+  (motion: ModelMotion): TE.TaskEither<Error | "forbidden", void> =>
+    pipe(
+      userCanSubmitVotesForMember(t)(user)(memberId)(motion),
+      TE.chainW((canSubmit) =>
+        canSubmit ? TE.right(undefined) : TE.left("forbidden" as const)
+      )
     );
 
-export const userSubmitOwnVotes = (
-  user: User,
+const forbiddenErrorIfUserCannotReadVotesForMember =
+  (t: Transaction) =>
+  (user: LoggedInUser) =>
+  (memberId: string) =>
+  (motion: ModelMotion): TE.TaskEither<Error | "forbidden", void> =>
+    pipe(
+      userCanReadVotesForMember(t)(user)(memberId)(motion),
+      TE.chainW((canSubmit) =>
+        canSubmit ? TE.right(undefined) : TE.left("forbidden" as const)
+      )
+    );
+
+export const getMemberMotionVotes =
+  (user: LoggedInUser) =>
+  (
+    motionId: number,
+    onBehalfOfUserId: string
+  ): TE.TaskEither<
+    Error | "not-found" | "forbidden",
+    readonly ModelMotionVote[]
+  > =>
+    transactionalTaskEither((t) =>
+      pipe(
+        findMotionById(t)(motionId),
+        TE.chainFirstW(
+          forbiddenErrorIfUserCannotReadVotesForMember(t)(user)(
+            onBehalfOfUserId
+          )
+        ),
+        TE.chainW(() =>
+          findAllMotionsVotesForOnBehalfUser(t)(onBehalfOfUserId)(motionId)
+        )
+      )
+    );
+
+export const submitMotionVotes = (
+  user: LoggedInUser,
   motionId: number,
+  onBehalfOfUserId: string,
   votes: Vote[]
 ): TE.TaskEither<
   Error | "not-found" | "forbidden",
@@ -114,9 +195,14 @@ export const userSubmitOwnVotes = (
   transactionalTaskEither((t) =>
     pipe(
       findMotionById(t)(motionId),
-      TE.chainFirstW(clearPreviousVotes(t)(user)),
+      TE.chainFirstW(
+        forbiddenErrorIfUserCannotSubmitForMember(t)(user)(onBehalfOfUserId)
+      ),
+      TE.chainFirstW(clearPreviousVotes(t)(onBehalfOfUserId)),
       TE.map(
-        votesToBuildableMotionVotes(user)(deduplicateVoteResponses(votes))
+        votesToBuildableMotionVotes(user)(onBehalfOfUserId)(
+          deduplicateVoteResponses(votes)
+        )
       ),
       TE.chainW(createMotionVotes(t))
     )

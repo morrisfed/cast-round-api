@@ -4,7 +4,6 @@ import * as TE from "fp-ts/lib/TaskEither";
 import {
   AccountUserWithDetails,
   AccountUserDetails,
-  LinkUserDetailsWithCreatedBy,
   User,
 } from "../interfaces/users";
 import {
@@ -13,7 +12,6 @@ import {
 } from "../model/account-users";
 import transactionalTaskEither from "../model/transaction";
 import { hasAccountsReadAllPermission } from "../user/permissions";
-import { findLinkUsersDetailsWithCreatedByLinkUserForAccountId } from "../model/link-users";
 
 export const getAccounts = (
   user: User
@@ -38,22 +36,3 @@ export const getAccountUser = (
   }
   return TE.left("forbidden");
 };
-
-export const getAccountDelegates =
-  (user: User) =>
-  (
-    accountId: string
-  ): TE.TaskEither<
-    Error | "forbidden" | "account-not-found",
-    readonly LinkUserDetailsWithCreatedBy[]
-  > => {
-    if (hasAccountsReadAllPermission(user)) {
-      return transactionalTaskEither((t) =>
-        pipe(
-          findLinkUsersDetailsWithCreatedByLinkUserForAccountId(t)(accountId),
-          TE.chainW(TE.fromNullable("account-not-found" as const))
-        )
-      );
-    }
-    return TE.left("forbidden");
-  };

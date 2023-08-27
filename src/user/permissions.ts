@@ -40,8 +40,8 @@ const rolePermissions: Record<ModelRole, Array<Permission>> = {
   MEMBER: ["EVENTS_READ_CURRENT"],
   GROUP_MEMBER: ["GROUP_DELEGATES_READWRITE_OWN"],
   INDIVIDUAL_MEMBER: [],
-  GROUP_DELEGATE: [],
-  TELLOR: [],
+  GROUP_DELEGATE: ["EVENTS_READ_OWN"],
+  TELLOR: ["EVENTS_READ_OWN"],
   VOTER: [],
   GROUP_VOTER: [],
   INDIVIDUAL_VOTER: [],
@@ -175,6 +175,9 @@ export const hasEventsReadAllPermission = (user: User | undefined) =>
 
 export const hasEventsReadCurrentPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READ_CURRENT");
+
+export const hasEventsReadOwnPermission = (user: User | undefined) =>
+  hasPermission(user, "EVENTS_READ_OWN");
 
 export const hasEventsWriteAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READWRITE_ALL");

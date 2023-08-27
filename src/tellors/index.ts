@@ -37,7 +37,7 @@ export const createEventTellor =
         pipe(
           TE.Do,
           TE.bindW("event", () => getEvent(user, createRequest.eventId)),
-          TE.bindW("linkUser", () => {
+          TE.bindW("linkUser", ({ event }) => {
             const id = randomUUID();
             const linkUser: BuildableLinkUser = {
               id,
@@ -48,6 +48,10 @@ export const createEventTellor =
                 label: createRequest.label,
                 type: "tellor",
                 createdByUserId: user.id,
+                info: {
+                  infoSchemaVersion: 1,
+                  tellorForEventId: event.id,
+                },
               },
             };
             return createLinkUser(t)(linkUser);

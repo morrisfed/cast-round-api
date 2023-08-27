@@ -85,7 +85,7 @@ export class PersistedLinkUserDetails
 
   declare type: string;
 
-  declare linkForUserId: CreationOptional<string>;
+  declare info: string;
 
   declare createdByUserId: CreationOptional<string>;
 
@@ -115,7 +115,10 @@ export const initLinkUser = (sequelize: Sequelize) =>
         type: DataTypes.STRING,
         allowNull: false,
       },
-      linkForUserId: { type: DataTypes.STRING, allowNull: true },
+      info: {
+        type: DataTypes.STRING(4000),
+        allowNull: false,
+      },
       createdByUserId: { type: DataTypes.STRING, allowNull: false },
       createdAt: DataTypes.DATE,
       updatedAt: DataTypes.DATE,
@@ -214,25 +217,6 @@ export const initUser = (sequelize: Sequelize) => {
       allowNull: false,
       field: "createdByUserId",
       name: "createdByUserId",
-    },
-  });
-
-  PersistedAccountUserDetails.hasMany(PersistedLinkUserDetails, {
-    as: "links",
-    sourceKey: "id",
-    foreignKey: {
-      allowNull: true,
-      field: "linkForUserId",
-      name: "linkForUserId",
-    },
-  });
-  PersistedLinkUserDetails.belongsTo(PersistedAccountUserDetails, {
-    as: "linkFor",
-    targetKey: "id",
-    foreignKey: {
-      allowNull: true,
-      field: "linkForUserId",
-      name: "linkForUserId",
     },
   });
 };

@@ -1,12 +1,6 @@
 import * as t from "io-ts";
+import { JsonFromString } from "io-ts-types";
 import { MembershipWorksUserType } from "../../membership-works/MembershipWorksTypes";
-
-// const ModelUserSource = t.union([t.literal("account"), t.literal("link")]);
-
-const LinkUserType = t.union([
-  t.literal("group-delegate"),
-  t.literal("tellor"),
-]);
 
 export const ModelAccountUserDetails = t.strict({
   id: t.string,
@@ -17,13 +11,59 @@ export const ModelAccountUserDetails = t.strict({
 });
 export type ModelAccountUserDetails = t.TypeOf<typeof ModelAccountUserDetails>;
 
-export const ModelLinkUserDetails = t.strict({
+const ModelLinkUserGroupDelegateInfoSchema1 = t.strict({
+  infoSchemaVersion: t.literal(1),
+  delegateForGroupId: t.string,
+  delegateForGroupName: t.string,
+  delegateForEventId: t.number,
+});
+const ModelLinkUserGroupDelegateInfo = ModelLinkUserGroupDelegateInfoSchema1;
+export type ModelLinkUserGroupDelegateInfo = t.TypeOf<
+  typeof ModelLinkUserGroupDelegateInfo
+>;
+
+const ModelLinkUserGroupDelegateInfoFromString = t.string.pipe(
+  JsonFromString.pipe(ModelLinkUserGroupDelegateInfo)
+);
+
+const ModelLinkUserTellorInfoSchema1 = t.strict({
+  infoSchemaVersion: t.literal(1),
+  tellorForEventId: t.number,
+});
+const ModelLinkUserTellorInfo = ModelLinkUserTellorInfoSchema1;
+export type ModelLinkUserTellorInfo = t.TypeOf<typeof ModelLinkUserTellorInfo>;
+
+const ModelLinkUserTellorInfoFromString = t.string.pipe(
+  JsonFromString.pipe(ModelLinkUserTellorInfo)
+);
+
+export const ModelLinkUserGroupDelegateDetails = t.strict({
   id: t.string,
   label: t.string,
-  type: LinkUserType,
-  linkForUserId: t.union([t.string, t.undefined, t.null]),
+  type: t.literal("group-delegate"),
+  info: ModelLinkUserGroupDelegateInfoFromString,
+  // linkForUserId: t.union([t.string, t.undefined, t.null]),
   createdByUserId: t.string,
 });
+export type ModelLinkUserGroupDelegateDetails = t.TypeOf<
+  typeof ModelLinkUserGroupDelegateDetails
+>;
+
+export const ModelLinkUserTellorDetails = t.strict({
+  id: t.string,
+  label: t.string,
+  type: t.literal("tellor"),
+  info: ModelLinkUserTellorInfoFromString,
+  createdByUserId: t.string,
+});
+export type ModelLinkUserTellorDetails = t.TypeOf<
+  typeof ModelLinkUserTellorDetails
+>;
+
+export const ModelLinkUserDetails = t.union([
+  ModelLinkUserGroupDelegateDetails,
+  ModelLinkUserTellorDetails,
+]);
 export type ModelLinkUserDetails = t.TypeOf<typeof ModelLinkUserDetails>;
 
 export const ModelAccountUser = t.strict({
@@ -85,25 +125,34 @@ export type ModelLinkUserWithDetails = t.TypeOf<
   typeof ModelLinkUserWithDetails
 >;
 
-export const ModelLinkUserDetailsWithCreatedBy = t.strict({
+const ModelLinkUserGroupDelegateDetailsWithCreatedBy = t.strict({
   label: t.string,
   createdBy: ModelUser,
-  type: LinkUserType,
+  type: t.literal("group-delegate"),
+  info: ModelLinkUserGroupDelegateInfoFromString,
 });
+
+const ModelLinkUserTellorDetailsWithCreatedBy = t.strict({
+  label: t.string,
+  createdBy: ModelUser,
+  type: t.literal("tellor"),
+  info: ModelLinkUserTellorInfoFromString,
+});
+
+export const ModelLinkUserDetailsWithCreatedBy = t.union([
+  ModelLinkUserGroupDelegateDetailsWithCreatedBy,
+  ModelLinkUserTellorDetailsWithCreatedBy,
+]);
 export type ModelLinkUserDetailsWithCreatedBy = t.TypeOf<
   typeof ModelLinkUserDetailsWithCreatedBy
 >;
 
 interface ModelBuildableAccountUserDetails extends ModelAccountUserDetails {}
 
-export interface ModelBuildableLinkUserDetails {
-  id: string;
-  label: string;
-  type: string;
-
-  linkForUserId?: string;
-  createdByUserId: string;
-}
+export const ModelBuildableLinkUserDetails = ModelLinkUserDetails;
+export type ModelBuildableLinkUserDetails = t.TypeOf<
+  typeof ModelBuildableLinkUserDetails
+>;
 
 export interface ModelBuildableAccountUser
   extends Omit<ModelAccountUserWithDetails, "account"> {

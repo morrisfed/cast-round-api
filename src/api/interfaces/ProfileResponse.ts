@@ -6,6 +6,14 @@ export default interface ProfileResponse {
     id: string;
     name: string;
     roles: ModelRole[];
+    groupDelegateInfo?: {
+      delegateForGroupId: string;
+      delegateForGroupName: string;
+      delegateForEventId: number;
+    };
+    tellorInfo?: {
+      tellorForEventId: number;
+    };
   };
   frontEndFeatureFlags: FrontEndFeatureFlags;
 }

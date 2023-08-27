@@ -10,8 +10,8 @@ export interface DbLinkUserDetails {
   id: string;
   label: string;
   type: string;
+  info: string;
 
-  linkForUserId?: string;
   createdByUserId?: string;
 }
 

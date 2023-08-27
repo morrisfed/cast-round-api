@@ -6,7 +6,10 @@ import * as A from "fp-ts/lib/Array";
 import { Transaction } from "sequelize";
 
 import { PersistedEventGroupDelegate } from "./db/event-group-delegates";
-import { findPersistedEventGroupDelegates } from "./_internal/event-group-delegate";
+import {
+  findPersistedEventGroupDelegatesByDelegateFor,
+  findPersistedEventGroupDelegatesByDelegateId,
+} from "./_internal/event-group-delegate";
 import {
   ModelBuildableEventGroupDelegate,
   ModelEventGroupDelegateWithDelegateUserDelgateFor,
@@ -46,9 +49,28 @@ export const findEventGroupDelegateByAccountAndEvent =
     ModelEventGroupDelegateWithDelegateUserDelgateFor
   > =>
     pipe(
-      findPersistedEventGroupDelegates(["delegateFor", "delegateUser"])(t)(
-        eventId
-      )(accountId),
+      findPersistedEventGroupDelegatesByDelegateFor([
+        "delegateFor",
+        "delegateUser",
+      ])(t)(eventId)(accountId),
+      TE.chainOptionKW(() => "not-found" as const)(A.head),
+      TE.chainIOEitherKW(asModelEventGroupDelegateWithDelegateUserDelgateFor)
+    );
+
+export const findEventGroupDelegateByLinkAndEvent =
+  (t: Transaction) =>
+  (eventId: number) =>
+  (
+    linkId: string
+  ): TE.TaskEither<
+    Error | "not-found",
+    ModelEventGroupDelegateWithDelegateUserDelgateFor
+  > =>
+    pipe(
+      findPersistedEventGroupDelegatesByDelegateId([
+        "delegateFor",
+        "delegateUser",
+      ])(t)(eventId)(linkId),
       TE.chainOptionKW(() => "not-found" as const)(A.head),
       TE.chainIOEitherKW(asModelEventGroupDelegateWithDelegateUserDelgateFor)
     );

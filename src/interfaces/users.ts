@@ -1,4 +1,8 @@
 import { MembershipWorksUserType } from "../membership-works/MembershipWorksTypes";
+import {
+  ModelLinkUserGroupDelegateInfo,
+  ModelLinkUserTellorInfo,
+} from "../model/interfaces/model-users";
 
 export type LinkUserType = "group-delegate" | "tellor";
 type UserSource = "account" | "link";
@@ -19,28 +23,34 @@ export interface AccountUserDetailsWithLinks extends AccountUserDetails {
   links?: LinkUserDetails[];
 }
 
-export interface LinkUserDetails {
+export interface LinkUserGroupDelegateDetails {
   id: string;
   label: string;
-  type: LinkUserType;
+  type: "group-delegate";
+  info: ModelLinkUserGroupDelegateInfo;
 
-  linkForUserId?: string | null;
-  createdByUserId?: string;
-}
-
-export interface LinkUserDetailsExpanded extends LinkUserDetails {
-  createdBy: User;
-  linkFor: AccountUserDetails;
-}
-
-export interface BuildableLinkUserDetails {
-  id: string;
-  label: string;
-  type: LinkUserType;
-
-  linkForUserId?: string;
   createdByUserId: string;
 }
+
+export interface LinkUserTellorDetails {
+  id: string;
+  label: string;
+  type: "tellor";
+  info: ModelLinkUserTellorInfo;
+
+  createdByUserId: string;
+}
+
+export type LinkUserDetails =
+  | LinkUserGroupDelegateDetails
+  | LinkUserTellorDetails;
+
+export type LinkUserDetailsExpanded = LinkUserDetails & {
+  createdBy: User;
+  linkFor: AccountUserDetails;
+};
+
+export type BuildableLinkUserDetails = LinkUserDetails;
 
 export interface LinkUserDetailsWithCreatedBy {
   label: string;
@@ -82,3 +92,5 @@ export interface LinkUserWithDetails extends LinkUser {
 export interface BuildableLinkUser extends Omit<LinkUserWithDetails, "link"> {
   link: BuildableLinkUserDetails;
 }
+
+export type LoggedInUser = AccountUserWithDetails | LinkUserWithDetails;

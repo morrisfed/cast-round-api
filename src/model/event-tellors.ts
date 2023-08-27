@@ -7,7 +7,10 @@ import { Refinement } from "fp-ts/lib/Refinement";
 import { Transaction } from "sequelize";
 
 import { PersistedEventTellor } from "./db/event-tellors";
-import { findPersistedEventTellors } from "./_internal/event-tellors";
+import {
+  findPersistedEventTellorByEventAndUser,
+  findPersistedEventTellors,
+} from "./_internal/event-tellors";
 
 import { PersistedEvent } from "./db/events";
 import { PersistedLinkUserDetails } from "./db/users";
@@ -58,6 +61,18 @@ export const findEventTellorsByEvent =
       findPersistedEventTellors(["tellorUser", "event"])(t)(eventId),
       TE.map(A.filter(isPersistedEventTellorWithEventAndUser)),
       TE.chainIOEitherKW(dbEventTellorArrayAsModelEventTellorArray)
+    );
+
+export const findEventTellorByEventAndTellorUser =
+  (t: Transaction) =>
+  (eventId: number) =>
+  (linkUserId: string): TE.TaskEither<Error | "not-found", ModelEventTellor> =>
+    pipe(
+      findPersistedEventTellorByEventAndUser(["tellorUser", "event"])(t)(
+        eventId
+      )(linkUserId),
+      TE.chainW((p) => (p ? TE.right(p) : TE.left("not-found" as const))),
+      TE.chainIOEitherKW(dbEventTellorAsModelEventTellor)
     );
 
 const createPersistedEventTellor =

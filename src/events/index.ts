@@ -2,10 +2,11 @@ import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
 import * as ROA from "fp-ts/lib/ReadonlyArray";
 
-import { User } from "../interfaces/users";
+import { LoggedInUser, User } from "../interfaces/users";
 import {
   hasEventsReadAllPermission,
   hasEventsReadCurrentPermission,
+  hasEventsReadOwnPermission,
   hasEventsWriteAllPermission,
   hasMotionsReadAllPermission,
 } from "../user/permissions";
@@ -80,6 +81,29 @@ export const getEvent = (
       )
     );
   }
+
+  if (hasEventsReadOwnPermission(user)) {
+    if (user.source === "link") {
+      if (
+        (user.link?.type === "group-delegate" &&
+          user.link.info.delegateForEventId === eventId) ||
+        (user.link?.type === "tellor" &&
+          user.link.info.tellorForEventId === eventId)
+      ) {
+        return transactionalTaskEither((t) =>
+          pipe(
+            findCurrentEventWithMotionsById(t)(eventId)(new Date()),
+            TE.chainW(TE.fromNullable("not-found" as const)),
+            TE.map((event) => ({
+              ...event,
+              motions: ROA.filter(showMotionForUser(user))(event.motions),
+            }))
+          )
+        );
+      }
+    }
+  }
+
   return TE.left("forbidden");
 };
 
@@ -180,7 +204,7 @@ export const setEventMotionStatus = (
 };
 
 export const getEventMotion =
-  (user: User) =>
+  (user: LoggedInUser) =>
   (
     motionId: number
   ): TE.TaskEither<Error | "not-found", MotionWithOptionalVotes> =>
@@ -190,7 +214,11 @@ export const getEventMotion =
         TE.chainW(TE.fromNullable("not-found" as const)),
         TE.bindTo("motion"),
         TE.bind("votes", ({ motion }) =>
-          findAllMotionsVotesForOnBehalfUser(t)(user.id)(motion.id)
+          findAllMotionsVotesForOnBehalfUser(t)(
+            user.link?.type === "group-delegate"
+              ? user.link.info.delegateForGroupId
+              : user.id
+          )(motion.id)
         ),
         TE.map(({ motion, votes }) => ({ ...motion, votes }))
       )

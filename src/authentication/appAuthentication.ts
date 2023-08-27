@@ -17,7 +17,7 @@ import { URLSearchParams } from "url";
 import env from "../utils/env";
 import { fetchUserInfoForMwAccessToken } from "../membership-works/mwUserInfo";
 import { importUsers } from "../user/importUsers";
-import { User as AppUser } from "../interfaces/users";
+import { User as AppUser, LoggedInUser } from "../interfaces/users";
 import {
   isMwProfileParseError,
   isMwUnrecognisedMembershipType,
@@ -28,6 +28,7 @@ declare global {
   namespace Express {
     interface User extends AppUser {
       authVia: "membership-works" | "link";
+      loggedInUser: LoggedInUser;
     }
   }
 }
@@ -36,9 +37,10 @@ type SessionUser = { id: string; authVia: Express.User["authVia"] };
 
 const userInfoToExpressUser =
   (authVia: Express.User["authVia"]) =>
-  (userInfo: AppUser): Express.User => ({
+  (userInfo: LoggedInUser): Express.User => ({
     ...userInfo,
     authVia,
+    loggedInUser: userInfo,
   });
 
 const mwVerifyFunction: Oauth2VerifyFunction = async (
