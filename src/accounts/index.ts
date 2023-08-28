@@ -7,7 +7,7 @@ import {
   User,
 } from "../interfaces/users";
 import {
-  findAccountUserWithLinksById,
+  findAccountUserWithDetailsById,
   findAllAccountsUserDetails,
 } from "../model/account-users";
 import transactionalTaskEither from "../model/transaction";
@@ -29,7 +29,7 @@ export const getAccountUser = (
   if (hasAccountsReadAllPermission(user)) {
     return transactionalTaskEither((t) =>
       pipe(
-        findAccountUserWithLinksById(t)(accountId),
+        findAccountUserWithDetailsById(t)(accountId),
         TE.chainW(TE.fromNullable("not-found" as const))
       )
     );
