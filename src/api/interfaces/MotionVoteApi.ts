@@ -6,6 +6,20 @@ const MotionVoteRequest = t.strict({
   count: t.number,
 });
 
+const MotionVoteSubtotal = t.strict({
+  responseCode: t.string,
+  subtotal: t.number,
+  proxy: t.boolean,
+});
+
+export const GetMotionVoteTotalsResponse = t.strict({
+  subtotals: t.readonlyArray(MotionVoteSubtotal),
+});
+
+export type GetMotionVoteTotalsResponse = t.TypeOf<
+  typeof GetMotionVoteTotalsResponse
+>;
+
 export const GetMotionVotesResponse = t.strict({
   votes: t.readonlyArray(ModelMotionVote),
 });

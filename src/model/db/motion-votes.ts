@@ -29,6 +29,8 @@ export class PersistedMotionVote
   declare responseCode: string;
 
   declare votes: number;
+
+  declare proxy: boolean;
 }
 
 const initMotionVoteModel = (sequelize: Sequelize) =>
@@ -54,6 +56,10 @@ const initMotionVoteModel = (sequelize: Sequelize) =>
       },
       votes: {
         type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      proxy: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
       },
     },

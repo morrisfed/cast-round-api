@@ -13,11 +13,18 @@ import {
   SubmitMotionVotesRequest,
   SubmitMotionVotesResponse,
   GetMotionVotesResponse,
+  GetMotionVoteTotalsResponse,
 } from "./interfaces/MotionVoteApi";
 import {
   getMemberMotionVotes,
+  getMotionVoteTotals,
   submitMotionVotes,
 } from "../votes/vote-submission";
+
+const MotionIdObject = t.strict({
+  motionId: IntFromString,
+});
+type MotionIdObject = t.TypeOf<typeof MotionIdObject>;
 
 const MotionIdAndMemberIdObject = t.strict({
   motionId: IntFromString,
@@ -26,6 +33,42 @@ const MotionIdAndMemberIdObject = t.strict({
 type MotionIdAndMemberIdObject = t.TypeOf<typeof MotionIdAndMemberIdObject>;
 
 export const motionVoteRouter = express.Router({ mergeParams: true });
+
+motionVoteRouter.get<MotionIdObject, GetMotionVoteTotalsResponse>(
+  "/:motionId/totals",
+  async (req, res) => {
+    if (req.isAuthenticated()) {
+      const getMotionVoteTotalsResponseTask = pipe(
+        MotionIdObject.decode(req.params),
+        TE.fromEither,
+        TE.chainW((ids) =>
+          getMotionVoteTotals(req.user.loggedInUser)(ids.motionId)
+        ),
+        TE.fold(
+          (err) => {
+            if (err === "forbidden") {
+              res.sendStatus(403);
+            } else if (err === "not-found") {
+              res.sendStatus(404);
+            } else {
+              res.sendStatus(500);
+              logger.error(err);
+            }
+            return T.of(undefined);
+          },
+          (subtotals) => {
+            res.json({ subtotals });
+            return T.of(undefined);
+          }
+        )
+      );
+
+      await getMotionVoteTotalsResponseTask();
+    } else {
+      throw new Error();
+    }
+  }
+);
 
 motionVoteRouter.get<MotionIdAndMemberIdObject, GetMotionVotesResponse>(
   "/:motionId/:memberId",
@@ -42,7 +85,9 @@ motionVoteRouter.get<MotionIdAndMemberIdObject, GetMotionVotesResponse>(
         ),
         TE.fold(
           (err) => {
-            if (err === "not-found") {
+            if (err === "forbidden") {
+              res.sendStatus(403);
+            } else if (err === "not-found") {
               res.sendStatus(404);
             } else {
               res.sendStatus(500);

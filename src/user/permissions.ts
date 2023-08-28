@@ -27,7 +27,9 @@ export type Permission =
   | "EVENTS_READ_UNASSIGNED"
   | "EVENTS_READWRITE_ALL"
   | "TELLORS_READWRITE"
-  | "MOTIONS_READ_ALL";
+  | "MOTIONS_READ_ALL"
+  | "VOTE_TOTALS_READ_ALL"
+  | "VOTE_TOTALS_READ_OWN_EVENT";
 
 const rolePermissions: Record<ModelRole, Array<Permission>> = {
   ADMINISTRATOR: ["IMPORT_ACCOUNTS_CSV", "ACCOUNTS_READ_ALL"],
@@ -36,12 +38,13 @@ const rolePermissions: Record<ModelRole, Array<Permission>> = {
     "EVENTS_READWRITE_ALL",
     "TELLORS_READWRITE",
     "MOTIONS_READ_ALL",
+    "VOTE_TOTALS_READ_ALL",
   ],
   MEMBER: ["EVENTS_READ_CURRENT"],
-  GROUP_MEMBER: ["GROUP_DELEGATES_READWRITE_OWN"],
-  INDIVIDUAL_MEMBER: [],
-  GROUP_DELEGATE: ["EVENTS_READ_OWN"],
-  TELLOR: ["EVENTS_READ_OWN"],
+  GROUP_MEMBER: ["GROUP_DELEGATES_READWRITE_OWN", "VOTE_TOTALS_READ_ALL"],
+  INDIVIDUAL_MEMBER: ["VOTE_TOTALS_READ_ALL"],
+  GROUP_DELEGATE: ["EVENTS_READ_OWN", "VOTE_TOTALS_READ_OWN_EVENT"],
+  TELLOR: ["EVENTS_READ_OWN", "VOTE_TOTALS_READ_OWN_EVENT"],
   VOTER: [],
   GROUP_VOTER: [],
   INDIVIDUAL_VOTER: [],
@@ -65,6 +68,8 @@ const transitivePermissions: Record<Permission, Array<Permission>> = {
   EVENTS_READ_CURRENT: [],
   TELLORS_READWRITE: [],
   MOTIONS_READ_ALL: [],
+  VOTE_TOTALS_READ_ALL: [],
+  VOTE_TOTALS_READ_OWN_EVENT: [],
 };
 
 const permissionEq = E.fromEquals<Permission>((x, y) => x === y);
@@ -184,3 +189,9 @@ export const hasEventsWriteAllPermission = (user: User | undefined) =>
 
 export const hasMotionsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "MOTIONS_READ_ALL");
+
+export const hasVoteTotalsReadAllPermission = (user: User | undefined) =>
+  hasPermission(user, "VOTE_TOTALS_READ_ALL");
+
+export const hasVoteTotalsReadOwnEventPermission = (user: User | undefined) =>
+  hasPermission(user, "VOTE_TOTALS_READ_OWN_EVENT");

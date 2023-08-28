@@ -23,7 +23,7 @@ const dbMotionVoteArrayAsModelMotionVoteArray = (
 ): IOE.IOEither<Error, ModelMotionVote[]> =>
   A.traverse(IOE.ApplicativePar)(dbMotionVoteAsModelMotionVote)(dbMotionVotes);
 
-export const findAllMotionsVotes =
+export const findAllMotionVotes =
   (t: Transaction) =>
   (motionId: number): TE.TaskEither<Error | "not-found", ModelMotionVote[]> =>
     pipe(

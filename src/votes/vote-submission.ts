@@ -1,10 +1,12 @@
 import { pipe } from "fp-ts/lib/function";
 import * as TE from "fp-ts/lib/TaskEither";
+import * as E from "fp-ts/lib/Either";
 import * as ROA from "fp-ts/lib/ReadonlyArray";
 import * as RONEA from "fp-ts/lib/ReadonlyNonEmptyArray";
 import * as ORD from "fp-ts/Ord";
 import * as EQ from "fp-ts/Eq";
-import * as Str from "fp-ts/string";
+import * as STR from "fp-ts/string";
+import * as BOOL from "fp-ts/boolean";
 import * as SEMI from "fp-ts/Semigroup";
 
 import { Transaction } from "sequelize";
@@ -12,6 +14,7 @@ import { Transaction } from "sequelize";
 import { LoggedInUser, User } from "../interfaces/users";
 import {
   ModelBuildableMotionVote,
+  ModelMotionSubTotal,
   ModelMotionVote,
 } from "../model/interfaces/model-motion-votes";
 import transactionalTaskEither from "../model/transaction";
@@ -20,14 +23,20 @@ import { ModelMotion } from "../model/interfaces/model-motions";
 import {
   createMotionVote,
   deleteMotionVotesForOnBehalfUser,
+  findAllMotionVotes,
   findAllMotionsVotesForOnBehalfUser,
 } from "../model/motion-votes";
 import { findEventGroupDelegateByLinkAndEvent } from "../model/event-group-delegates";
 import { findEventTellorByEventAndTellorUser } from "../model/event-tellors";
+import {
+  hasVoteTotalsReadAllPermission,
+  hasVoteTotalsReadOwnEventPermission,
+} from "../user/permissions";
 
 export interface Vote {
   code: string;
   count: number;
+  proxy: boolean;
 }
 
 export interface VoteWithMotionId extends Vote {
@@ -47,6 +56,7 @@ const votesToBuildableMotionVotes =
     votes.map((vote) => ({
       responseCode: vote.code,
       votes: vote.count,
+      proxy: vote.proxy,
       motionId: motion.id,
       onBehalfOfUserId,
       submittedByUserId: user.id,
@@ -63,18 +73,30 @@ const clearPreviousVotes =
   (t: Transaction) => (onBehalfOfUserId: string) => (motion: ModelMotion) =>
     deleteMotionVotesForOnBehalfUser(t)(onBehalfOfUserId)(motion.id);
 
-const ordResponseCode: ORD.Ord<string> = Str.Ord;
-
 const ordVoteByResponseCode: ORD.Ord<Vote> = pipe(
-  ordResponseCode,
+  STR.Ord,
   ORD.contramap((vote: Vote) => vote.code)
 );
-
-const eqResponseCode: EQ.Eq<string> = Str.Eq;
+const ordVoteByProxy: ORD.Ord<Vote> = pipe(
+  BOOL.Ord,
+  ORD.contramap((vote: Vote) => vote.proxy)
+);
+const ordVoteByResponseCodeAndProxy = ORD.getMonoid<Vote>().concat(
+  ordVoteByResponseCode,
+  ordVoteByProxy
+);
 
 const eqVoteByResponseCode: EQ.Eq<Vote> = pipe(
-  eqResponseCode,
+  STR.Eq,
   EQ.contramap((vote: Vote) => vote.code)
+);
+const eqVoteByProxy: EQ.Eq<Vote> = pipe(
+  BOOL.Eq,
+  EQ.contramap((vote: Vote) => vote.proxy)
+);
+const eqVoteByResponseCodeAndProxy = EQ.getMonoid<Vote>().concat(
+  eqVoteByResponseCode,
+  eqVoteByProxy
 );
 
 const group =
@@ -89,12 +111,70 @@ const mergeVotePair: SEMI.Semigroup<Vote> = {
 const mergeVotes = (votes: RONEA.ReadonlyNonEmptyArray<Vote>) =>
   SEMI.concatAll(mergeVotePair)(RONEA.head(votes))(RONEA.tail(votes));
 
-const deduplicateVoteResponses = (votes: Vote[]) =>
+const deduplicateVoteResponses = (votes: readonly Vote[]) =>
   pipe(
     votes,
-    ROA.sort(ordVoteByResponseCode),
-    group(eqVoteByResponseCode),
+    ROA.sort(ordVoteByResponseCodeAndProxy),
+    group(eqVoteByResponseCodeAndProxy),
     ROA.map(mergeVotes)
+  );
+
+const ordSubtotalByResponseCode: ORD.Ord<ModelMotionSubTotal> = pipe(
+  STR.Ord,
+  ORD.contramap((vote: ModelMotionSubTotal) => vote.responseCode)
+);
+const ordSubtotalByProxy: ORD.Ord<ModelMotionSubTotal> = pipe(
+  BOOL.Ord,
+  ORD.contramap((vote: ModelMotionSubTotal) => vote.proxy)
+);
+const ordSubtotalByResponseCodeAndProxy =
+  ORD.getMonoid<ModelMotionSubTotal>().concat(
+    ordSubtotalByResponseCode,
+    ordSubtotalByProxy
+  );
+
+const eqSubtotalByResponseCode: EQ.Eq<ModelMotionSubTotal> = pipe(
+  STR.Eq,
+  EQ.contramap((vote: ModelMotionSubTotal) => vote.responseCode)
+);
+const eqSubtotalByProxy: EQ.Eq<ModelMotionSubTotal> = pipe(
+  BOOL.Eq,
+  EQ.contramap((vote: ModelMotionSubTotal) => vote.proxy)
+);
+const eqSubtotalByResponseCodeAndProxy =
+  EQ.getMonoid<ModelMotionSubTotal>().concat(
+    eqSubtotalByResponseCode,
+    eqSubtotalByProxy
+  );
+
+const modelMotionVoteToSubtotal = (
+  vote: ModelMotionVote
+): ModelMotionSubTotal => ({
+  responseCode: vote.responseCode,
+  subtotal: vote.votes,
+  proxy: vote.proxy,
+});
+const modelMotionVoteArrayToSubtotalArray = (
+  votes: readonly ModelMotionVote[]
+): readonly ModelMotionSubTotal[] => ROA.map(modelMotionVoteToSubtotal)(votes);
+
+const mergeSubtotalPair: SEMI.Semigroup<ModelMotionSubTotal> = {
+  concat: (x, y) => ({ ...x, subtotal: x.subtotal + y.subtotal }),
+};
+
+const mergeSubtotals = (
+  votes: RONEA.ReadonlyNonEmptyArray<ModelMotionSubTotal>
+) => SEMI.concatAll(mergeSubtotalPair)(RONEA.head(votes))(RONEA.tail(votes));
+
+const subtotalModelMotionVotes = (
+  votes: readonly ModelMotionVote[]
+): readonly ModelMotionSubTotal[] =>
+  pipe(
+    votes,
+    modelMotionVoteArrayToSubtotalArray,
+    ROA.sort(ordSubtotalByResponseCodeAndProxy),
+    group(eqSubtotalByResponseCodeAndProxy),
+    ROA.map(mergeSubtotals)
   );
 
 // Checks whether the given user has permission to submit the given votes
@@ -148,6 +228,16 @@ const forbiddenErrorIfUserCannotSubmitForMember =
       )
     );
 
+const motionCanAcceptVotes = (motion: ModelMotion) =>
+  motion.status === "open" || motion.status === "proxy";
+
+const conflictIfMotionCannotAcceptVotes = (
+  motion: ModelMotion
+): E.Either<"conflict", void> =>
+  motionCanAcceptVotes(motion)
+    ? E.right(undefined)
+    : E.left("conflict" as const);
+
 const forbiddenErrorIfUserCannotReadVotesForMember =
   (t: Transaction) =>
   (user: LoggedInUser) =>
@@ -159,6 +249,66 @@ const forbiddenErrorIfUserCannotReadVotesForMember =
         canSubmit ? TE.right(undefined) : TE.left("forbidden" as const)
       )
     );
+
+const userCanReadTotalsForMotion =
+  (user: LoggedInUser) =>
+  (motion: ModelMotion): boolean => {
+    if (hasVoteTotalsReadAllPermission(user)) {
+      return true;
+    }
+
+    if (hasVoteTotalsReadOwnEventPermission(user)) {
+      if (user.source === "link") {
+        if (
+          user.link.type === "group-delegate" &&
+          user.link.info.delegateForEventId === motion.eventId
+        ) {
+          return true;
+        }
+        if (
+          user.link.type === "tellor" &&
+          user.link.info.tellorForEventId === motion.eventId
+        ) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  };
+
+const forbiddenErrorIfUserCannotReadVotesTotals =
+  (user: LoggedInUser) =>
+  (motion: ModelMotion): E.Either<Error | "forbidden", void> =>
+    userCanReadTotalsForMotion(user)(motion)
+      ? E.right(undefined)
+      : E.left("forbidden" as const);
+
+const getAllMotionVotes =
+  (user: LoggedInUser) =>
+  (
+    motionId: number
+  ): TE.TaskEither<
+    Error | "not-found" | "forbidden",
+    readonly ModelMotionVote[]
+  > =>
+    transactionalTaskEither((t) =>
+      pipe(
+        findMotionById(t)(motionId),
+        TE.chainFirstEitherKW(forbiddenErrorIfUserCannotReadVotesTotals(user)),
+        TE.chainW(() => findAllMotionVotes(t)(motionId))
+      )
+    );
+
+export const getMotionVoteTotals =
+  (user: LoggedInUser) =>
+  (
+    motionId: number
+  ): TE.TaskEither<
+    Error | "not-found" | "forbidden",
+    readonly ModelMotionSubTotal[]
+  > =>
+    pipe(getAllMotionVotes(user)(motionId), TE.map(subtotalModelMotionVotes));
 
 export const getMemberMotionVotes =
   (user: LoggedInUser) =>
@@ -183,13 +333,25 @@ export const getMemberMotionVotes =
       )
     );
 
+const assignProxyFlag =
+  (proxy: boolean) =>
+  (voteWithoutProxyFlag: Omit<Vote, "proxy">): Vote => ({
+    ...voteWithoutProxyFlag,
+    proxy,
+  });
+
+const assignProxyFlags =
+  (proxy: boolean) =>
+  (votesWithoutProxyFlag: readonly Omit<Vote, "proxy">[]): readonly Vote[] =>
+    ROA.map(assignProxyFlag(proxy))(votesWithoutProxyFlag);
+
 export const submitMotionVotes = (
   user: LoggedInUser,
   motionId: number,
   onBehalfOfUserId: string,
-  votes: Vote[]
+  votes: readonly Omit<Vote, "proxy">[]
 ): TE.TaskEither<
-  Error | "not-found" | "forbidden",
+  Error | "not-found" | "forbidden" | "conflict",
   readonly ModelMotionVote[]
 > =>
   transactionalTaskEither((t) =>
@@ -198,11 +360,14 @@ export const submitMotionVotes = (
       TE.chainFirstW(
         forbiddenErrorIfUserCannotSubmitForMember(t)(user)(onBehalfOfUserId)
       ),
+      TE.chainFirstEitherKW(conflictIfMotionCannotAcceptVotes),
       TE.chainFirstW(clearPreviousVotes(t)(onBehalfOfUserId)),
-      TE.map(
+      TE.map((motion) =>
         votesToBuildableMotionVotes(user)(onBehalfOfUserId)(
-          deduplicateVoteResponses(votes)
-        )
+          deduplicateVoteResponses(
+            assignProxyFlags(motion.status === "proxy")(votes)
+          )
+        )(motion)
       ),
       TE.chainW(createMotionVotes(t))
     )
