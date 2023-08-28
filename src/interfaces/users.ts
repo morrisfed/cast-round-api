@@ -1,4 +1,5 @@
 import { MembershipWorksUserType } from "../membership-works/MembershipWorksTypes";
+import { ModelRole } from "../model/interfaces/model-roles";
 import {
   ModelLinkUserGroupDelegateInfo,
   ModelLinkUserTellorInfo,

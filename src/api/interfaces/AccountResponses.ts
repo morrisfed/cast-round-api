@@ -1,6 +1,9 @@
 import { AccountUserDetails } from "../../interfaces/users";
+import { ModelRole } from "../../model/interfaces/model-roles";
 
-interface AccountResponse extends AccountUserDetails {}
+interface AccountResponse extends AccountUserDetails {
+  roles: ModelRole[];
+}
 
 export interface GetAccountResponse {
   account: AccountResponse;

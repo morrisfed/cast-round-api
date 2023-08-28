@@ -8,7 +8,7 @@ import {
   isGroupAccountType,
   isIndividualAccountType,
 } from "../accounts/accountTypes";
-import { User } from "../interfaces/users";
+import { AccountUserDetails, User } from "../interfaces/users";
 import { ModelRole } from "../model/interfaces/model-roles";
 
 export type Permission =
@@ -125,6 +125,19 @@ export const getRoles = (user: User): ModelRole[] =>
     isIndividualVoterRole(user) ? O.some("INDIVIDUAL_VOTER") : O.none,
     isVotorRole(user) ? O.some("VOTER") : O.none,
   ]);
+
+export const getAccountUserRoles = (
+  accountUserDetails: AccountUserDetails
+): ModelRole[] => {
+  const dummyUser: User = {
+    id: "dummy",
+    source: "account",
+    enabled: true,
+    account: accountUserDetails,
+  };
+
+  return getRoles(dummyUser);
+};
 
 const getPermissionsForRole = (role: ModelRole): Permission[] =>
   rolePermissions[role];
