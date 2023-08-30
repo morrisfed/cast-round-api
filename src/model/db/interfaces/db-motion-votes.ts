@@ -5,5 +5,5 @@ export interface DbMotionVote {
   submittedByUserId: string;
   responseCode: string;
   votes: number;
-  proxy: boolean;
+  advanced: boolean;
 }

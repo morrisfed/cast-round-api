@@ -5,7 +5,7 @@ import { ModelRole } from "./model-roles";
 
 const ModelMotionStatus = t.union([
   t.literal("draft"),
-  t.literal("proxy"),
+  t.literal("advanced"),
   t.literal("open"),
   t.literal("closed"),
   t.literal("cancelled"),

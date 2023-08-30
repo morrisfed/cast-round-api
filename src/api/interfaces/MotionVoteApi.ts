@@ -9,7 +9,7 @@ const MotionVoteRequest = t.strict({
 const MotionVoteSubtotal = t.strict({
   responseCode: t.string,
   subtotal: t.number,
-  proxy: t.boolean,
+  advanced: t.boolean,
 });
 
 export const GetMotionVoteTotalsResponse = t.strict({

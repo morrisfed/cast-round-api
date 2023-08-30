@@ -36,7 +36,7 @@ import {
 export interface Vote {
   code: string;
   count: number;
-  proxy: boolean;
+  advanced: boolean;
 }
 
 export interface VoteWithMotionId extends Vote {
@@ -56,7 +56,7 @@ const votesToBuildableMotionVotes =
     votes.map((vote) => ({
       responseCode: vote.code,
       votes: vote.count,
-      proxy: vote.proxy,
+      advanced: vote.advanced,
       motionId: motion.id,
       onBehalfOfUserId,
       submittedByUserId: user.id,
@@ -77,26 +77,26 @@ const ordVoteByResponseCode: ORD.Ord<Vote> = pipe(
   STR.Ord,
   ORD.contramap((vote: Vote) => vote.code)
 );
-const ordVoteByProxy: ORD.Ord<Vote> = pipe(
+const ordVoteByAdvanced: ORD.Ord<Vote> = pipe(
   BOOL.Ord,
-  ORD.contramap((vote: Vote) => vote.proxy)
+  ORD.contramap((vote: Vote) => vote.advanced)
 );
-const ordVoteByResponseCodeAndProxy = ORD.getMonoid<Vote>().concat(
+const ordVoteByResponseCodeAndAdvanced = ORD.getMonoid<Vote>().concat(
   ordVoteByResponseCode,
-  ordVoteByProxy
+  ordVoteByAdvanced
 );
 
 const eqVoteByResponseCode: EQ.Eq<Vote> = pipe(
   STR.Eq,
   EQ.contramap((vote: Vote) => vote.code)
 );
-const eqVoteByProxy: EQ.Eq<Vote> = pipe(
+const eqVoteByAdvanced: EQ.Eq<Vote> = pipe(
   BOOL.Eq,
-  EQ.contramap((vote: Vote) => vote.proxy)
+  EQ.contramap((vote: Vote) => vote.advanced)
 );
-const eqVoteByResponseCodeAndProxy = EQ.getMonoid<Vote>().concat(
+const eqVoteByResponseCodeAndAdvanced = EQ.getMonoid<Vote>().concat(
   eqVoteByResponseCode,
-  eqVoteByProxy
+  eqVoteByAdvanced
 );
 
 const group =
@@ -114,8 +114,8 @@ const mergeVotes = (votes: RONEA.ReadonlyNonEmptyArray<Vote>) =>
 const deduplicateVoteResponses = (votes: readonly Vote[]) =>
   pipe(
     votes,
-    ROA.sort(ordVoteByResponseCodeAndProxy),
-    group(eqVoteByResponseCodeAndProxy),
+    ROA.sort(ordVoteByResponseCodeAndAdvanced),
+    group(eqVoteByResponseCodeAndAdvanced),
     ROA.map(mergeVotes)
   );
 
@@ -123,28 +123,28 @@ const ordSubtotalByResponseCode: ORD.Ord<ModelMotionSubTotal> = pipe(
   STR.Ord,
   ORD.contramap((vote: ModelMotionSubTotal) => vote.responseCode)
 );
-const ordSubtotalByProxy: ORD.Ord<ModelMotionSubTotal> = pipe(
+const ordSubtotalByAdvanced: ORD.Ord<ModelMotionSubTotal> = pipe(
   BOOL.Ord,
-  ORD.contramap((vote: ModelMotionSubTotal) => vote.proxy)
+  ORD.contramap((vote: ModelMotionSubTotal) => vote.advanced)
 );
-const ordSubtotalByResponseCodeAndProxy =
+const ordSubtotalByResponseCodeAndAdvanced =
   ORD.getMonoid<ModelMotionSubTotal>().concat(
     ordSubtotalByResponseCode,
-    ordSubtotalByProxy
+    ordSubtotalByAdvanced
   );
 
 const eqSubtotalByResponseCode: EQ.Eq<ModelMotionSubTotal> = pipe(
   STR.Eq,
   EQ.contramap((vote: ModelMotionSubTotal) => vote.responseCode)
 );
-const eqSubtotalByProxy: EQ.Eq<ModelMotionSubTotal> = pipe(
+const eqSubtotalByAdvanced: EQ.Eq<ModelMotionSubTotal> = pipe(
   BOOL.Eq,
-  EQ.contramap((vote: ModelMotionSubTotal) => vote.proxy)
+  EQ.contramap((vote: ModelMotionSubTotal) => vote.advanced)
 );
-const eqSubtotalByResponseCodeAndProxy =
+const eqSubtotalByResponseCodeAndAdvanced =
   EQ.getMonoid<ModelMotionSubTotal>().concat(
     eqSubtotalByResponseCode,
-    eqSubtotalByProxy
+    eqSubtotalByAdvanced
   );
 
 const modelMotionVoteToSubtotal = (
@@ -152,7 +152,7 @@ const modelMotionVoteToSubtotal = (
 ): ModelMotionSubTotal => ({
   responseCode: vote.responseCode,
   subtotal: vote.votes,
-  proxy: vote.proxy,
+  advanced: vote.advanced,
 });
 const modelMotionVoteArrayToSubtotalArray = (
   votes: readonly ModelMotionVote[]
@@ -172,8 +172,8 @@ const subtotalModelMotionVotes = (
   pipe(
     votes,
     modelMotionVoteArrayToSubtotalArray,
-    ROA.sort(ordSubtotalByResponseCodeAndProxy),
-    group(eqSubtotalByResponseCodeAndProxy),
+    ROA.sort(ordSubtotalByResponseCodeAndAdvanced),
+    group(eqSubtotalByResponseCodeAndAdvanced),
     ROA.map(mergeSubtotals)
   );
 
@@ -229,7 +229,7 @@ const forbiddenErrorIfUserCannotSubmitForMember =
     );
 
 const motionCanAcceptVotes = (motion: ModelMotion) =>
-  motion.status === "open" || motion.status === "proxy";
+  motion.status === "open" || motion.status === "advanced";
 
 const conflictIfMotionCannotAcceptVotes = (
   motion: ModelMotion
@@ -333,23 +333,25 @@ export const getMemberMotionVotes =
       )
     );
 
-const assignProxyFlag =
-  (proxy: boolean) =>
-  (voteWithoutProxyFlag: Omit<Vote, "proxy">): Vote => ({
-    ...voteWithoutProxyFlag,
-    proxy,
+const assignAdvancedFlag =
+  (advanced: boolean) =>
+  (voteWithoutAdvancedFlag: Omit<Vote, "advanced">): Vote => ({
+    ...voteWithoutAdvancedFlag,
+    advanced,
   });
 
-const assignProxyFlags =
-  (proxy: boolean) =>
-  (votesWithoutProxyFlag: readonly Omit<Vote, "proxy">[]): readonly Vote[] =>
-    ROA.map(assignProxyFlag(proxy))(votesWithoutProxyFlag);
+const assignAdvancedFlags =
+  (advanced: boolean) =>
+  (
+    votesWithoutAdvancedFlag: readonly Omit<Vote, "advanced">[]
+  ): readonly Vote[] =>
+    ROA.map(assignAdvancedFlag(advanced))(votesWithoutAdvancedFlag);
 
 export const submitMotionVotes = (
   user: LoggedInUser,
   motionId: number,
   onBehalfOfUserId: string,
-  votes: readonly Omit<Vote, "proxy">[]
+  votes: readonly Omit<Vote, "advanced">[]
 ): TE.TaskEither<
   Error | "not-found" | "forbidden" | "conflict",
   readonly ModelMotionVote[]
@@ -365,7 +367,7 @@ export const submitMotionVotes = (
       TE.map((motion) =>
         votesToBuildableMotionVotes(user)(onBehalfOfUserId)(
           deduplicateVoteResponses(
-            assignProxyFlags(motion.status === "proxy")(votes)
+            assignAdvancedFlags(motion.status === "advanced")(votes)
           )
         )(motion)
       ),
