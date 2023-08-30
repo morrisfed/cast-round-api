@@ -32,6 +32,7 @@ import {
   hasVoteTotalsReadAllPermission,
   hasVoteTotalsReadOwnEventPermission,
 } from "../user/permissions";
+import { Motion } from "../interfaces/motions";
 
 export interface Vote {
   code: string;
@@ -260,12 +261,6 @@ const userCanReadTotalsForMotion =
     if (hasVoteTotalsReadOwnEventPermission(user)) {
       if (user.source === "link") {
         if (
-          user.link.type === "group-delegate" &&
-          user.link.info.delegateForEventId === motion.eventId
-        ) {
-          return true;
-        }
-        if (
           user.link.type === "tellor" &&
           user.link.info.tellorForEventId === motion.eventId
         ) {
@@ -285,20 +280,14 @@ const forbiddenErrorIfUserCannotReadVotesTotals =
       : E.left("forbidden" as const);
 
 const getAllMotionVotes =
-  (user: LoggedInUser) =>
+  (t: Transaction) =>
   (
-    motionId: number
+    motion: Motion
   ): TE.TaskEither<
     Error | "not-found" | "forbidden",
     readonly ModelMotionVote[]
   > =>
-    transactionalTaskEither((t) =>
-      pipe(
-        findMotionById(t)(motionId),
-        TE.chainFirstEitherKW(forbiddenErrorIfUserCannotReadVotesTotals(user)),
-        TE.chainW(() => findAllMotionVotes(t)(motionId))
-      )
-    );
+    pipe(findAllMotionVotes(t)(motion.id));
 
 export const getMotionVoteTotals =
   (user: LoggedInUser) =>
@@ -308,7 +297,14 @@ export const getMotionVoteTotals =
     Error | "not-found" | "forbidden",
     readonly ModelMotionSubTotal[]
   > =>
-    pipe(getAllMotionVotes(user)(motionId), TE.map(subtotalModelMotionVotes));
+    transactionalTaskEither((t) =>
+      pipe(
+        findMotionById(t)(motionId),
+        TE.chainFirstEitherKW(forbiddenErrorIfUserCannotReadVotesTotals(user)),
+        TE.chainW(getAllMotionVotes(t)),
+        TE.map(subtotalModelMotionVotes)
+      )
+    );
 
 export const getMemberMotionVotes =
   (user: LoggedInUser) =>
