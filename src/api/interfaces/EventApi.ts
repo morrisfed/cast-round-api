@@ -70,6 +70,7 @@ export interface PatchMotionResponse {
 const MotionStatusRequest = t.union([
   t.literal("draft"),
   t.literal("advanced"),
+  t.literal("hold"),
   t.literal("open"),
   t.literal("closed"),
   t.literal("cancelled"),
