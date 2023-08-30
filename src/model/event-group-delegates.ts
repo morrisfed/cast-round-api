@@ -102,3 +102,16 @@ export const createEventGroupDelegate =
       createPersistedEventGroupDelegate(t)(buildableEventGroupDelegate),
       TE.chainIOEitherKW(asModelEventGroupDelegate)
     );
+
+export const deleteEventGroupDelegate =
+  (t: Transaction) => (eventId: number) => (delegateForUserId: string) =>
+    pipe(
+      TE.tryCatch(
+        () =>
+          PersistedEventGroupDelegate.destroy({
+            where: { eventId, delegateForUserId },
+            transaction: t,
+          }),
+        (reason) => new Error(String(reason))
+      )
+    );

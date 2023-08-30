@@ -19,6 +19,7 @@ import { createLinkUser } from "../model/link-users";
 import {
   findEventGroupDelegateByAccountAndEvent,
   createEventGroupDelegate as modelCreateEventGroupDelegate,
+  deleteEventGroupDelegate as modelDeleteEventGroupDelegate,
 } from "../model/event-group-delegates";
 import { isGroupAccountType } from "../accounts/accountTypes";
 import { findAccountUserWithLinksById } from "../model/account-users";
@@ -35,6 +36,16 @@ const hasPermissionToReadGroupDelegateForAccount =
  * Confirm the user has permission to create a group delegate for the given account ID.
  */
 const hasPermissionToCreateGroupDelegateForAccount =
+  (user: User) => (delegateForAccountId: string) =>
+    hasDelegatesWriteAllPermission(user) ||
+    hasDelegatesWriteAllMembersPermission(user) ||
+    (hasGroupDelegatesWriteOwnPermission(user) &&
+      user.id === delegateForAccountId);
+
+/**
+ * Confirm the user has permission to delete a group delegate for the given account ID.
+ */
+const hasPermissionToDeleteGroupDelegateForAccount =
   (user: User) => (delegateForAccountId: string) =>
     hasDelegatesWriteAllPermission(user) ||
     hasDelegatesWriteAllMembersPermission(user) ||
@@ -132,6 +143,29 @@ export const createEventGroupDelegate =
               delegateForUserId: groupAccount.id,
             })
           )
+        )
+      );
+    }
+
+    return TE.left("forbidden" as const);
+  };
+
+export const deleteEventGroupDelegate =
+  (user: User) =>
+  (eventId: number) =>
+  (
+    groupMemberId: string
+  ): TE.TaskEither<Error | "not-found" | "forbidden", undefined> => {
+    if (hasPermissionToDeleteGroupDelegateForAccount(user)(groupMemberId)) {
+      return transactionalTaskEither((t) =>
+        pipe(
+          modelDeleteEventGroupDelegate(t)(eventId)(groupMemberId),
+          TE.chainW((deleteCount) => {
+            if (deleteCount === 0) {
+              return TE.left("not-found" as const);
+            }
+            return TE.right(undefined);
+          })
         )
       );
     }
