@@ -2,6 +2,7 @@ import * as t from "io-ts";
 import { JsonFromString, withFallback } from "io-ts-types";
 
 import { ModelRole } from "./model-roles";
+import { DataValuesFromFromModel } from "../db/interfaces/persisted";
 
 const ModelMotionStatus = t.union([
   t.literal("draft"),
@@ -44,17 +45,19 @@ const ModelVoteDefinitionFromString = t.string.pipe(
   JsonFromString.pipe(ModelVoteDefinition)
 );
 
-export const ModelMotion = t.strict({
-  id: t.number,
-  eventId: t.number,
-  status: ModelMotionStatus,
-  title: t.string,
-  description: t.string,
-  voteDefinition: withFallback(
-    ModelVoteDefinitionFromString,
-    defaultVoteDefinitionSchema
-  ),
-});
+export const ModelMotion = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.number,
+    eventId: t.number,
+    status: ModelMotionStatus,
+    title: t.string,
+    description: t.string,
+    voteDefinition: withFallback(
+      ModelVoteDefinitionFromString,
+      defaultVoteDefinitionSchema
+    ),
+  })
+);
 
 export type ModelMotion = t.TypeOf<typeof ModelMotion>;
 

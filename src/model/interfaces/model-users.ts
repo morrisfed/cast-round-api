@@ -1,14 +1,17 @@
 import * as t from "io-ts";
 import { JsonFromString } from "io-ts-types";
 import { MembershipWorksUserType } from "../../membership-works/MembershipWorksTypes";
+import { DataValuesFromFromModel } from "../db/interfaces/persisted";
 
-export const ModelAccountUserDetails = t.strict({
-  id: t.string,
-  name: t.string,
-  contactName: t.union([t.string, t.null]),
-  type: MembershipWorksUserType,
-  isAdmin: t.boolean,
-});
+export const ModelAccountUserDetails = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.string,
+    name: t.string,
+    contactName: t.union([t.string, t.null]),
+    type: MembershipWorksUserType,
+    isAdmin: t.boolean,
+  })
+);
 export type ModelAccountUserDetails = t.TypeOf<typeof ModelAccountUserDetails>;
 
 const ModelLinkUserGroupDelegateInfoSchema1 = t.strict({
@@ -48,35 +51,41 @@ const ModelLinkUserClerkInfoFromString = t.string.pipe(
   JsonFromString.pipe(ModelLinkUserClerkInfo)
 );
 
-export const ModelLinkUserGroupDelegateDetails = t.strict({
-  id: t.string,
-  label: t.string,
-  type: t.literal("group-delegate"),
-  info: ModelLinkUserGroupDelegateInfoFromString,
-  createdByUserId: t.string,
-});
+export const ModelLinkUserGroupDelegateDetails = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.string,
+    label: t.string,
+    type: t.literal("group-delegate"),
+    info: ModelLinkUserGroupDelegateInfoFromString,
+    createdByUserId: t.string,
+  })
+);
 export type ModelLinkUserGroupDelegateDetails = t.TypeOf<
   typeof ModelLinkUserGroupDelegateDetails
 >;
 
-export const ModelLinkUserTellorDetails = t.strict({
-  id: t.string,
-  label: t.string,
-  type: t.literal("tellor"),
-  info: ModelLinkUserTellorInfoFromString,
-  createdByUserId: t.string,
-});
+export const ModelLinkUserTellorDetails = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.string,
+    label: t.string,
+    type: t.literal("tellor"),
+    info: ModelLinkUserTellorInfoFromString,
+    createdByUserId: t.string,
+  })
+);
 export type ModelLinkUserTellorDetails = t.TypeOf<
   typeof ModelLinkUserTellorDetails
 >;
 
-export const ModelLinkUserClerkDetails = t.strict({
-  id: t.string,
-  label: t.string,
-  type: t.literal("clerk"),
-  info: ModelLinkUserClerkInfoFromString,
-  createdByUserId: t.string,
-});
+export const ModelLinkUserClerkDetails = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.string,
+    label: t.string,
+    type: t.literal("clerk"),
+    info: ModelLinkUserClerkInfoFromString,
+    createdByUserId: t.string,
+  })
+);
 export type ModelLinkUserClerkDetails = t.TypeOf<
   typeof ModelLinkUserClerkDetails
 >;
@@ -95,11 +104,13 @@ export const ModelAccountUser = t.strict({
 });
 export type ModelAccountUser = t.TypeOf<typeof ModelAccountUser>;
 
-export const ModelLinkUser = t.strict({
-  id: t.string,
-  enabled: t.boolean,
-  source: t.literal("link"),
-});
+export const ModelLinkUser = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.string,
+    enabled: t.boolean,
+    source: t.literal("link"),
+  })
+);
 export type ModelLinkUser = t.TypeOf<typeof ModelLinkUser>;
 
 export const ModelUser = t.union([ModelAccountUser, ModelLinkUser]);
@@ -127,22 +138,26 @@ export type ModelAccountUserWithLinks = t.TypeOf<
   typeof ModelAccountUserWithLinks
 >;
 
-export const ModelAccountUserWithDetails = t.strict({
-  id: t.string,
-  enabled: t.boolean,
-  source: t.literal("account"),
-  account: ModelAccountUserDetails,
-});
+export const ModelAccountUserWithDetails = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.string,
+    enabled: t.boolean,
+    source: t.literal("account"),
+    account: ModelAccountUserDetails,
+  })
+);
 export type ModelAccountUserWithDetails = t.TypeOf<
   typeof ModelAccountUserWithDetails
 >;
 
-export const ModelLinkUserWithDetails = t.strict({
-  id: t.string,
-  enabled: t.boolean,
-  source: t.literal("link"),
-  link: ModelLinkUserDetails,
-});
+export const ModelLinkUserWithDetails = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.string,
+    enabled: t.boolean,
+    source: t.literal("link"),
+    link: ModelLinkUserDetails,
+  })
+);
 export type ModelLinkUserWithDetails = t.TypeOf<
   typeof ModelLinkUserWithDetails
 >;

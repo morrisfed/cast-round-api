@@ -10,6 +10,9 @@ import * as NUM from "fp-ts/number";
 import * as BOOL from "fp-ts/boolean";
 import * as SEMI from "fp-ts/Semigroup";
 import * as MONOID from "fp-ts/Monoid";
+import { UUID } from "io-ts-types";
+
+import crypto from "crypto";
 
 import { Transaction } from "sequelize";
 
@@ -38,6 +41,9 @@ import { Motion } from "../interfaces/motions";
 import { findEventClerkByEventAndClerkUser } from "../model/event-clerks";
 import { findAccountUserWithDetailsById } from "../model/account-users";
 import { ModelRole } from "../model/interfaces/model-roles";
+import { ModelMotionVoteAudit } from "../model/interfaces/model-motion-vote-audits";
+import { ModelAccountUserWithDetails } from "../model/interfaces/model-users";
+import { createMotionVoteAudits } from "../model/motion-vote-audits";
 
 export interface Vote {
   code: string;
@@ -310,14 +316,13 @@ const invalidIfVotesInvalidForUserRolesAndVoteDefinition =
   };
 
 const invalidIfFailsValidityCheck =
-  (t: Transaction) =>
   (votes: readonly Omit<Vote, "advanced">[]) =>
-  (memberId: string) =>
+  (member: ModelAccountUserWithDetails) =>
   (
     motion: ModelMotion
   ): TE.TaskEither<Error | "not-found" | "invalid-submission", unknown> =>
     pipe(
-      findAccountUserWithDetailsById(t)(memberId),
+      TE.of(member),
       TE.map(getRoles),
       TE.chainEitherKW(
         invalidIfVotesInvalidForUserRolesAndVoteDefinition(votes)(
@@ -430,6 +435,68 @@ const assignAdvancedFlags =
   ): readonly Vote[] =>
     ROA.map(assignAdvancedFlag(advanced))(votesWithoutAdvancedFlag);
 
+const typeForSubmittingUser = (user: LoggedInUser) => {
+  if (user.source === "account") {
+    return user.account.type;
+  }
+  return user.link.type;
+};
+
+const nameForSubmittingUser = (user: LoggedInUser) => {
+  if (user.source === "account") {
+    return user.account.contactName || "";
+  }
+  return user.link.label;
+};
+
+const auditRecordForCreatedMotionVote =
+  (submittingUser: LoggedInUser) =>
+  (submissionId: UUID) =>
+  (submittedAt: Date) =>
+  (accountUser: ModelAccountUserWithDetails) =>
+  (replacedVoteIds: number[]) =>
+  (motionVote: ModelMotionVote): ModelMotionVoteAudit => ({
+    voteId: motionVote.id,
+    submissionId,
+
+    motionId: motionVote.motionId,
+    responseCode: motionVote.responseCode,
+    votes: motionVote.votes,
+    advancedVote: motionVote.advanced,
+
+    accountUserId: accountUser.id,
+    accountUserName: accountUser.account.name,
+    accountUserContact: accountUser.account.contactName || "",
+    accountUserType: accountUser.account.type,
+
+    submittedByUserId: submittingUser.id,
+    submittedByUserType: typeForSubmittingUser(submittingUser),
+    submittedByUserName: nameForSubmittingUser(submittingUser),
+
+    replacedPreviousVotes: replacedVoteIds,
+
+    submittedAt,
+  });
+
+const auditRecordsForCreatedMotionVotes =
+  (submittingUser: LoggedInUser) =>
+  (submissionId: UUID) =>
+  (submittedAt: Date) =>
+  (accountUser: ModelAccountUserWithDetails) =>
+  (replacedVoteIds: number[]) =>
+  (motionVotes: readonly ModelMotionVote[]): readonly ModelMotionVoteAudit[] =>
+    ROA.map(
+      auditRecordForCreatedMotionVote(submittingUser)(submissionId)(
+        submittedAt
+      )(accountUser)(replacedVoteIds)
+    )(motionVotes);
+
+const generateSubmissionId = (): E.Either<Error, UUID> =>
+  pipe(
+    UUID.decode(crypto.randomUUID()),
+    E.mapLeft(() => new Error("Failed to generate UUID"))
+  );
+
 export const submitMotionVotes = (
   user: LoggedInUser,
   motionId: number,
@@ -446,15 +513,48 @@ export const submitMotionVotes = (
         forbiddenErrorIfUserCannotSubmitForMember(t)(user)(onBehalfOfUserId)
       ),
       TE.chainFirstEitherKW(conflictIfMotionCannotAcceptVotes),
-      TE.chainFirstW(invalidIfFailsValidityCheck(t)(votes)(onBehalfOfUserId)),
-      TE.chainFirstW(clearPreviousVotes(t)(onBehalfOfUserId)),
-      TE.map((motion) =>
-        votesToBuildableMotionVotes(user)(onBehalfOfUserId)(
-          deduplicateVoteResponses(
-            assignAdvancedFlags(motion.status === "advanced")(votes)
-          )
-        )(motion)
+      TE.bindTo("motion"),
+      TE.bindW("submittedAt", () => TE.of(new Date())),
+      TE.bindW("submissionId", () => TE.fromEither(generateSubmissionId())),
+      TE.bindW("accountUser", () =>
+        findAccountUserWithDetailsById(t)(onBehalfOfUserId)
       ),
-      TE.chainW(createMotionVotes(t))
+      TE.chainFirstW(({ accountUser, motion }) =>
+        invalidIfFailsValidityCheck(votes)(accountUser)(motion)
+      ),
+      TE.bindW("replacedVoteIds", ({ motion }) =>
+        clearPreviousVotes(t)(onBehalfOfUserId)(motion)
+      ),
+      TE.bindW("buildableMotionVotes", ({ motion }) =>
+        TE.of(
+          votesToBuildableMotionVotes(user)(onBehalfOfUserId)(
+            deduplicateVoteResponses(
+              assignAdvancedFlags(motion.status === "advanced")(votes)
+            )
+          )(motion)
+        )
+      ),
+      TE.bindW("createdMotionVotes", ({ buildableMotionVotes }) =>
+        createMotionVotes(t)(buildableMotionVotes)
+      ),
+      TE.bindW(
+        "buildableAuditRecords",
+        ({
+          submittedAt,
+          submissionId,
+          accountUser,
+          replacedVoteIds,
+          createdMotionVotes,
+        }) =>
+          TE.of(
+            auditRecordsForCreatedMotionVotes(user)(submissionId)(submittedAt)(
+              accountUser
+            )(replacedVoteIds)(createdMotionVotes)
+          )
+      ),
+      TE.bindW("auditRecords", ({ buildableAuditRecords }) =>
+        createMotionVoteAudits(t)(buildableAuditRecords)
+      ),
+      TE.map(({ createdMotionVotes }) => createdMotionVotes)
     )
   );

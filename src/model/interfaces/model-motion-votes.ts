@@ -1,14 +1,17 @@
 import * as t from "io-ts";
+import { DataValuesFromFromModel } from "../db/interfaces/persisted";
 
-export const ModelMotionVote = t.strict({
-  id: t.number,
-  motionId: t.number,
-  onBehalfOfUserId: t.string,
-  submittedByUserId: t.string,
-  responseCode: t.string,
-  votes: t.number,
-  advanced: t.boolean,
-});
+export const ModelMotionVote = DataValuesFromFromModel.pipe(
+  t.strict({
+    id: t.number,
+    motionId: t.number,
+    onBehalfOfUserId: t.string,
+    submittedByUserId: t.string,
+    responseCode: t.string,
+    votes: t.number,
+    advanced: t.boolean,
+  })
+);
 
 export type ModelMotionVote = t.TypeOf<typeof ModelMotionVote>;
 

@@ -5,6 +5,7 @@ import * as IOE from "fp-ts/lib/IOEither";
 import * as IO from "fp-ts/lib/IO";
 import * as A from "fp-ts/lib/Array";
 import * as Console from "fp-ts/lib/Console";
+import { Model } from "sequelize";
 
 const logValidationErrors = <A>(
   validation: Validation<A>
@@ -19,18 +20,11 @@ const logValidationErrors = <A>(
 // Strict and exact IO-TS decoders rely on the object being have superfluous properties removed
 // to report their properties through Object.getOwnProperties(...).
 // Objects built by sequelize do not have any own properties related to their model columns, meaning
-// io-ts decoders will fail to decode them.
-// To work around this, serialise objects to a JSON string and then parse them back to an object before
-// decoding with io-ts.
+// io-ts object decoders would fail to decode them. To work around this, decoders involving Model objects
+// should start with DataValuesFromModel which will extract the dataValues object from the model object, before
+// decoding with a regular codec.
 export const decodePersistedIOE =
-  <I, A, ErrT>(decoder: Decoder<I, A>) =>
+  <I extends Model, A, ErrT>(decoder: Decoder<I, A>) =>
   (errHandler: (errors: Errors) => ErrT) =>
   (input: I): IOE.IOEither<ErrT, A> =>
-    pipe(
-      input,
-      JSON.stringify,
-      JSON.parse,
-      decoder.decode,
-      logValidationErrors,
-      IOE.mapLeft(errHandler)
-    );
+    pipe(input, decoder.decode, logValidationErrors, IOE.mapLeft(errHandler));

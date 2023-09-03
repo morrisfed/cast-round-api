@@ -12,7 +12,6 @@ import {
   ModelEventClerk,
   ModelEventClerkWithEventAndUserDetails,
 } from "./interfaces/model-event-clerks";
-import { DbEventClerk } from "./db/interfaces/db-event-clerk";
 import {
   createPersistedEventClerkWithIncludableReturn,
   findPersistedEventClerkByEventAndUser,
@@ -20,17 +19,17 @@ import {
 } from "./_internal/event-clerks";
 
 const dbEventClerkAsModelEventClerk = (
-  dbEventClerk: DbEventClerk
+  dbEventClerk: PersistedEventClerk
 ): IOE.IOEither<Error, ModelEventClerk> =>
-  decodePersistedIOE<DbEventClerk, ModelEventClerk, Error>(ModelEventClerk)(
-    () => new Error("Invalid event clerk read from database")
-  )(dbEventClerk);
+  decodePersistedIOE<PersistedEventClerk, ModelEventClerk, Error>(
+    ModelEventClerk
+  )(() => new Error("Invalid event clerk read from database"))(dbEventClerk);
 
 const dbEventClerkAsModelEventClerkExpanded = (
-  dbEventClerk: DbEventClerk
+  dbEventClerk: PersistedEventClerk
 ): IOE.IOEither<Error, ModelEventClerkWithEventAndUserDetails> =>
   decodePersistedIOE<
-    DbEventClerk,
+    PersistedEventClerk,
     ModelEventClerkWithEventAndUserDetails,
     Error
   >(ModelEventClerkWithEventAndUserDetails)(
@@ -38,7 +37,7 @@ const dbEventClerkAsModelEventClerkExpanded = (
   )(dbEventClerk);
 
 const dbEventClerkArrayAsModelEventClerkExpandedArray = (
-  dbEventClerks: DbEventClerk[]
+  dbEventClerks: PersistedEventClerk[]
 ): IOE.IOEither<Error, ModelEventClerkWithEventAndUserDetails[]> =>
   A.traverse(IOE.ApplicativePar)(dbEventClerkAsModelEventClerkExpanded)(
     dbEventClerks

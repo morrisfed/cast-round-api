@@ -19,7 +19,6 @@ import {
   ModelEventTellor,
   ModelEventTellorNoExpansion,
 } from "./interfaces/model-event-tellors";
-import { DbEventTellor } from "./db/interfaces/db-event-tellors";
 import { decodePersistedIOE } from "./_internal/utils";
 
 interface PersistedEventTellorWithEventAndUser extends PersistedEventTellor {
@@ -34,21 +33,21 @@ const isPersistedEventTellorWithEventAndUser: Refinement<
   pet.event !== undefined && pet.tellorUser !== undefined;
 
 const dbEventTellorAsModelEventTellor = (
-  dbEventTellor: DbEventTellor
+  dbEventTellor: PersistedEventTellor
 ): IOE.IOEither<Error, ModelEventTellor> =>
-  decodePersistedIOE<DbEventTellor, ModelEventTellor, Error>(ModelEventTellor)(
-    () => new Error("Invalid event tellor read from database")
-  )(dbEventTellor);
+  decodePersistedIOE<PersistedEventTellor, ModelEventTellor, Error>(
+    ModelEventTellor
+  )(() => new Error("Invalid event tellor read from database"))(dbEventTellor);
 
 const dbEventTellorAsModelEventTellorNoExpansion = (
-  dbEventTellor: DbEventTellor
+  dbEventTellor: PersistedEventTellor
 ): IOE.IOEither<Error, ModelEventTellorNoExpansion> =>
-  decodePersistedIOE<DbEventTellor, ModelEventTellorNoExpansion, Error>(
+  decodePersistedIOE<PersistedEventTellor, ModelEventTellorNoExpansion, Error>(
     ModelEventTellorNoExpansion
   )(() => new Error("Invalid event tellor read from database"))(dbEventTellor);
 
 const dbEventTellorArrayAsModelEventTellorArray = (
-  dbEventTellors: DbEventTellor[]
+  dbEventTellors: PersistedEventTellor[]
 ): IOE.IOEither<Error, ModelEventTellor[]> =>
   A.traverse(IOE.ApplicativePar)(dbEventTellorAsModelEventTellor)(
     dbEventTellors

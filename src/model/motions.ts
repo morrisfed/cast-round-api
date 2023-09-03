@@ -4,33 +4,34 @@ import * as IOE from "fp-ts/lib/IOEither";
 import * as A from "fp-ts/lib/Array";
 
 import { Transaction } from "sequelize";
-import { findPersistedEvent } from "./_internal/event";
 import { PersistedMotion } from "./db/motions";
-import { findPersistedMotion, savePersistedMotion } from "./_internal/motion";
+import {
+  findPersistedMotion,
+  findPersistedMotionsByEventId,
+  savePersistedMotion,
+} from "./_internal/motion";
 import {
   ModelBuildableMotion,
   ModelMotion,
   ModelMotionUpdates,
 } from "./interfaces/model-motions";
-import { DbMotion } from "./db/interfaces/db-motions";
 import { decodePersistedIOE } from "./_internal/utils";
 
-const dbMotionAsModelMotion = (dbMotion: DbMotion) =>
-  decodePersistedIOE<DbMotion, ModelMotion, Error>(ModelMotion)(
+const dbMotionAsModelMotion = (dbMotion: PersistedMotion) =>
+  decodePersistedIOE<PersistedMotion, ModelMotion, Error>(ModelMotion)(
     () => new Error("Invalid motion read from database")
   )(dbMotion);
 
 const dbMotionArrayAsModelMotionArray = (
-  dbMotions: DbMotion[]
+  dbMotions: PersistedMotion[]
 ): IOE.IOEither<Error, ModelMotion[]> =>
   A.traverse(IOE.ApplicativePar)(dbMotionAsModelMotion)(dbMotions);
 
 export const findAllEventMotions =
   (t: Transaction) =>
-  (eventId: number): TE.TaskEither<Error | "not-found", ModelMotion[]> =>
+  (eventId: number): TE.TaskEither<Error, ModelMotion[]> =>
     pipe(
-      findPersistedEvent(["motions"])(t)(eventId),
-      TE.map((event) => event.motions || []),
+      findPersistedMotionsByEventId([])(t)(eventId),
       TE.chainIOEitherKW(dbMotionArrayAsModelMotionArray)
     );
 

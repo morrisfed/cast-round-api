@@ -15,7 +15,6 @@ import {
   ModelEventUpdates,
   ModelEventWithMotions,
 } from "./interfaces/model-events";
-import { DbEvent } from "./db/interfaces/db-events";
 import { decodePersistedIOE } from "./_internal/utils";
 
 interface PersistedEventWithMotions extends PersistedEvent {
@@ -23,21 +22,21 @@ interface PersistedEventWithMotions extends PersistedEvent {
 }
 
 const dbEventAsModelEvent = (
-  dbEvent: DbEvent
+  dbEvent: PersistedEvent
 ): IOE.IOEither<Error, ModelEvent> =>
-  decodePersistedIOE<DbEvent, ModelEvent, Error>(ModelEvent)(
+  decodePersistedIOE<PersistedEvent, ModelEvent, Error>(ModelEvent)(
     () => new Error("Invalid event read from database")
   )(dbEvent);
 
 const dbEventAsModelEventWithMotions = (
-  dbEvent: DbEvent
+  dbEvent: PersistedEvent
 ): IOE.IOEither<Error, ModelEventWithMotions> =>
-  decodePersistedIOE<DbEvent, ModelEventWithMotions, Error>(
+  decodePersistedIOE<PersistedEvent, ModelEventWithMotions, Error>(
     ModelEventWithMotions
   )(() => new Error("Invalid event read from database"))(dbEvent);
 
 const dbEventArrayAsModelEventArray = (
-  dbEvents: DbEvent[]
+  dbEvents: PersistedEvent[]
 ): IOE.IOEither<Error, ModelEvent[]> =>
   A.traverse(IOE.ApplicativePar)(dbEventAsModelEvent)(dbEvents);
 

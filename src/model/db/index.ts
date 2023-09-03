@@ -15,6 +15,7 @@ import {
 import { PersistedEventTellor, initEventTellor } from "./event-tellors";
 import { PersistedMotionVote, initMotionVote } from "./motion-votes";
 import { PersistedEventClerk, initEventClerk } from "./event-clerks";
+import { initMotionVoteAudit } from "./motion-vote-audits";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,
@@ -36,6 +37,7 @@ export const initDb = async () => {
   initEventGroupDelegate(sequelize);
   initEventTellor(sequelize);
   initEventClerk(sequelize);
+  initMotionVoteAudit(sequelize);
 
   PersistedEvent.belongsToMany(PersistedUser, {
     through: "UserEvent",
