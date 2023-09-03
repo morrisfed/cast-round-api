@@ -51,7 +51,7 @@ const rolePermissions: Record<ModelRole, Array<Permission>> = {
     "VOTE_TOTALS_READ_OWN_EVENT",
     "ACCOUNTS_READ_ALL",
   ],
-  VOTING_CLERK: ["EVENTS_READ_OWN"],
+  VOTING_CLERK: ["EVENTS_READ_OWN", "ACCOUNTS_READ_ALL"],
   VOTER: [],
   GROUP_VOTER: [],
   INDIVIDUAL_VOTER: [],
