@@ -91,6 +91,19 @@ const createPersistedEventTellor =
       )
     );
 
+const reloadPersistedEventTellor =
+  (t: Transaction) => (persistedEventTellor: PersistedEventTellor) =>
+    pipe(
+      TE.tryCatch(
+        () =>
+          persistedEventTellor.reload({
+            transaction: t,
+            include: ["event", "tellorUser"],
+          }),
+        (reason) => new Error(String(reason))
+      )
+    );
+
 export const createEventTellor =
   (t: Transaction) =>
   (
@@ -98,6 +111,7 @@ export const createEventTellor =
   ): TE.TaskEither<Error, ModelEventTellorNoExpansion> =>
     pipe(
       createPersistedEventTellor(t)(buildableEventTellor),
+      TE.chainW(reloadPersistedEventTellor(t)),
       TE.chainIOEitherK(dbEventTellorAsModelEventTellorNoExpansion)
     );
 

@@ -1,6 +1,6 @@
 import { MembershipWorksUserType } from "../membership-works/MembershipWorksTypes";
-import { ModelRole } from "../model/interfaces/model-roles";
 import {
+  ModelLinkUserClerkInfo,
   ModelLinkUserGroupDelegateInfo,
   ModelLinkUserTellorInfo,
 } from "../model/interfaces/model-users";
@@ -42,9 +42,19 @@ export interface LinkUserTellorDetails {
   createdByUserId: string;
 }
 
+export interface LinkUserClerkDetails {
+  id: string;
+  label: string;
+  type: "clerk";
+  info: ModelLinkUserClerkInfo;
+
+  createdByUserId: string;
+}
+
 export type LinkUserDetails =
   | LinkUserGroupDelegateDetails
-  | LinkUserTellorDetails;
+  | LinkUserTellorDetails
+  | LinkUserClerkDetails;
 
 export type LinkUserDetailsExpanded = LinkUserDetails & {
   createdBy: User;

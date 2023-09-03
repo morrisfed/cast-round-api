@@ -14,6 +14,9 @@ export default interface ProfileResponse {
     tellorInfo?: {
       tellorForEventId: number;
     };
+    clerkInfo?: {
+      clerkForEventId: number;
+    };
   };
   frontEndFeatureFlags: FrontEndFeatureFlags;
 }

@@ -11,6 +11,7 @@ export const ModelRole = t.union([
   t.literal("INDIVIDUAL_VOTER"),
   t.literal("VOTER"),
   t.literal("TELLOR"),
+  t.literal("VOTING_CLERK"),
   t.literal("COMMITTEE"),
 ]);
 

@@ -37,12 +37,22 @@ const ModelLinkUserTellorInfoFromString = t.string.pipe(
   JsonFromString.pipe(ModelLinkUserTellorInfo)
 );
 
+const ModelLinkUserClerkInfoSchema1 = t.strict({
+  infoSchemaVersion: t.literal(1),
+  clerkForEventId: t.number,
+});
+const ModelLinkUserClerkInfo = ModelLinkUserClerkInfoSchema1;
+export type ModelLinkUserClerkInfo = t.TypeOf<typeof ModelLinkUserClerkInfo>;
+
+const ModelLinkUserClerkInfoFromString = t.string.pipe(
+  JsonFromString.pipe(ModelLinkUserClerkInfo)
+);
+
 export const ModelLinkUserGroupDelegateDetails = t.strict({
   id: t.string,
   label: t.string,
   type: t.literal("group-delegate"),
   info: ModelLinkUserGroupDelegateInfoFromString,
-  // linkForUserId: t.union([t.string, t.undefined, t.null]),
   createdByUserId: t.string,
 });
 export type ModelLinkUserGroupDelegateDetails = t.TypeOf<
@@ -60,9 +70,21 @@ export type ModelLinkUserTellorDetails = t.TypeOf<
   typeof ModelLinkUserTellorDetails
 >;
 
+export const ModelLinkUserClerkDetails = t.strict({
+  id: t.string,
+  label: t.string,
+  type: t.literal("clerk"),
+  info: ModelLinkUserClerkInfoFromString,
+  createdByUserId: t.string,
+});
+export type ModelLinkUserClerkDetails = t.TypeOf<
+  typeof ModelLinkUserClerkDetails
+>;
+
 export const ModelLinkUserDetails = t.union([
   ModelLinkUserGroupDelegateDetails,
   ModelLinkUserTellorDetails,
+  ModelLinkUserClerkDetails,
 ]);
 export type ModelLinkUserDetails = t.TypeOf<typeof ModelLinkUserDetails>;
 

@@ -14,6 +14,7 @@ import {
 } from "./event-group-delegates";
 import { PersistedEventTellor, initEventTellor } from "./event-tellors";
 import { PersistedMotionVote, initMotionVote } from "./motion-votes";
+import { PersistedEventClerk, initEventClerk } from "./event-clerks";
 
 const sequelize = new Sequelize(
   env.MYSQL_DATABASE,
@@ -34,6 +35,7 @@ export const initDb = async () => {
   initMotionVote(sequelize);
   initEventGroupDelegate(sequelize);
   initEventTellor(sequelize);
+  initEventClerk(sequelize);
 
   PersistedEvent.belongsToMany(PersistedUser, {
     through: "UserEvent",
@@ -67,6 +69,15 @@ export const initDb = async () => {
     foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
   });
   PersistedEventTellor.belongsTo(PersistedEvent, {
+    as: "event",
+    foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
+  });
+
+  PersistedEvent.hasMany(PersistedEventClerk, {
+    as: "clerks",
+    foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
+  });
+  PersistedEventClerk.belongsTo(PersistedEvent, {
     as: "event",
     foreignKey: { allowNull: false, field: "eventId", name: "eventId" },
   });
@@ -105,6 +116,25 @@ export const initDb = async () => {
       allowNull: false,
       field: "tellorUserId",
       name: "tellorUserId",
+    },
+    targetKey: "id",
+  });
+
+  PersistedLinkUserDetails.hasMany(PersistedEventClerk, {
+    as: "clerkEvents",
+    foreignKey: {
+      allowNull: false,
+      field: "clerkUserId",
+      name: "clerkUserId",
+    },
+    sourceKey: "id",
+  });
+  PersistedEventClerk.belongsTo(PersistedLinkUserDetails, {
+    as: "clerkUser",
+    foreignKey: {
+      allowNull: false,
+      field: "clerkUserId",
+      name: "clerkUserId",
     },
     targetKey: "id",
   });

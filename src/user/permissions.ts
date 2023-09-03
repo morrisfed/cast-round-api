@@ -27,6 +27,7 @@ export type Permission =
   | "EVENTS_READ_UNASSIGNED"
   | "EVENTS_READWRITE_ALL"
   | "TELLORS_READWRITE"
+  | "CLERKS_READWRITE"
   | "MOTIONS_READ_ALL"
   | "VOTE_TOTALS_READ_ALL"
   | "VOTE_TOTALS_READ_OWN_EVENT";
@@ -37,6 +38,7 @@ const rolePermissions: Record<ModelRole, Array<Permission>> = {
     "ACCOUNTS_READ_ALL",
     "EVENTS_READWRITE_ALL",
     "TELLORS_READWRITE",
+    "CLERKS_READWRITE",
     "MOTIONS_READ_ALL",
     "VOTE_TOTALS_READ_ALL",
   ],
@@ -49,6 +51,7 @@ const rolePermissions: Record<ModelRole, Array<Permission>> = {
     "VOTE_TOTALS_READ_OWN_EVENT",
     "ACCOUNTS_READ_ALL",
   ],
+  VOTING_CLERK: ["EVENTS_READ_OWN"],
   VOTER: [],
   GROUP_VOTER: [],
   INDIVIDUAL_VOTER: [],
@@ -71,6 +74,7 @@ const transitivePermissions: Record<Permission, Array<Permission>> = {
   EVENTS_READWRITE_ALL: ["EVENTS_READ_ALL"],
   EVENTS_READ_CURRENT: [],
   TELLORS_READWRITE: [],
+  CLERKS_READWRITE: [],
   MOTIONS_READ_ALL: [],
   VOTE_TOTALS_READ_ALL: [],
   VOTE_TOTALS_READ_OWN_EVENT: [],
@@ -95,6 +99,9 @@ export const isGroupDelegateRole = (user: User | undefined): boolean =>
 
 export const isTellorDelegateRole = (user: User | undefined): boolean =>
   user?.link?.type === "tellor";
+
+export const isClerkRole = (user: User | undefined): boolean =>
+  user?.link?.type === "clerk";
 
 export const isDelegateRole = (user: User | undefined): boolean =>
   isGroupDelegateRole(user);
@@ -121,6 +128,7 @@ export const getRoles = (user: User): ModelRole[] =>
     isDelegateRole(user) ? O.some("DELEGATE") : O.none,
     isGroupDelegateRole(user) ? O.some("GROUP_DELEGATE") : O.none,
     isTellorDelegateRole(user) ? O.some("TELLOR") : O.none,
+    isClerkRole(user) ? O.some("VOTING_CLERK") : O.none,
     isGroupVoterRole(user) ? O.some("GROUP_VOTER") : O.none,
     isIndividualVoterRole(user) ? O.some("INDIVIDUAL_VOTER") : O.none,
     isVotorRole(user) ? O.some("VOTER") : O.none,
@@ -191,6 +199,11 @@ export const hasTellorsWritePermissions = (user: User | undefined) =>
   hasPermission(user, "TELLORS_READWRITE");
 
 export const hasTellorsReadPermissions = hasTellorsWritePermissions;
+
+export const hasClerksWritePermissions = (user: User | undefined) =>
+  hasPermission(user, "CLERKS_READWRITE");
+
+export const hasClerksReadPermissions = hasClerksWritePermissions;
 
 export const hasEventsReadAllPermission = (user: User | undefined) =>
   hasPermission(user, "EVENTS_READ_ALL");

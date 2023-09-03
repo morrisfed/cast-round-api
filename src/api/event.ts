@@ -38,6 +38,7 @@ import { getEventGroupDelegate } from "../delegates";
 import { GroupDelegateResponse } from "./interfaces/DelegateApi";
 import { EventTellorsResponse } from "./interfaces/TellorApi";
 import { getEventTellors, removeEventTellor } from "../tellors";
+import { eventClerksRouter } from "./event-clerks";
 
 const EventIdObject = t.strict({
   eventId: IntFromString,
@@ -208,6 +209,8 @@ eventRouter.delete<EventIdAndTellorIdObject>(
     }
   }
 );
+
+eventRouter.use("/clerks", eventClerksRouter);
 
 eventRouter.post<EventIdObject, CreateMotionResponse, CreateMotionRequest>(
   "/motions",

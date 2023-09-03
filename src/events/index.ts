@@ -88,7 +88,9 @@ export const getEvent = (
         (user.link?.type === "group-delegate" &&
           user.link.info.delegateForEventId === eventId) ||
         (user.link?.type === "tellor" &&
-          user.link.info.tellorForEventId === eventId)
+          user.link.info.tellorForEventId === eventId) ||
+        (user.link?.type === "clerk" &&
+          user.link.info.clerkForEventId === eventId)
       ) {
         return transactionalTaskEither((t) =>
           pipe(

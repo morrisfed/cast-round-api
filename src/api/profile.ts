@@ -32,6 +32,13 @@ profileRouter.get<{}, ProfileResponse>("/", nocache(), (req, res) => {
                   req.user.loggedInUser.link.info.tellorForEventId,
               }
             : undefined,
+        clerkInfo:
+          req.user.loggedInUser.link?.type === "clerk"
+            ? {
+                clerkForEventId:
+                  req.user.loggedInUser.link.info.clerkForEventId,
+              }
+            : undefined,
       },
       frontEndFeatureFlags: getFrontEndFeatureFlags(),
     });
