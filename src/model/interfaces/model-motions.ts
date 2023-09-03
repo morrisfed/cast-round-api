@@ -48,6 +48,7 @@ const ModelVoteDefinitionFromString = t.string.pipe(
 export const ModelMotion = DataValuesFromFromModel.pipe(
   t.strict({
     id: t.number,
+    sequence: t.number,
     eventId: t.number,
     status: ModelMotionStatus,
     title: t.string,
@@ -62,6 +63,7 @@ export const ModelMotion = DataValuesFromFromModel.pipe(
 export type ModelMotion = t.TypeOf<typeof ModelMotion>;
 
 export const ModelBuildableMotion = t.strict({
+  sequence: t.number,
   eventId: t.number,
   status: ModelMotionStatus,
   title: t.string,
@@ -72,6 +74,7 @@ export type ModelBuildableMotion = t.TypeOf<typeof ModelBuildableMotion>;
 
 export const ModelMotionUpdates = t.exact(
   t.partial({
+    sequence: t.number,
     status: ModelMotionStatus,
     title: t.string,
     description: t.string,

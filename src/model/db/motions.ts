@@ -21,6 +21,8 @@ export class PersistedMotion
 {
   declare id: NonAttribute<number>;
 
+  declare sequence: number;
+
   declare eventId: number;
 
   declare title: string;
@@ -38,6 +40,7 @@ const initMotionModel = (sequelize: Sequelize) =>
   PersistedMotion.init(
     {
       eventId: { type: DataTypes.INTEGER, allowNull: false },
+      sequence: { type: DataTypes.INTEGER, allowNull: false },
       title: {
         type: DataTypes.STRING,
         allowNull: false,

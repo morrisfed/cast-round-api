@@ -161,6 +161,7 @@ export const createEventMotion = (
     return transactionalTaskEither((t) =>
       pipe(
         modelCreateEventMotion(t)({
+          sequence: buildableMotion.sequence,
           title: buildableMotion.title,
           description: buildableMotion.description,
           eventId,
