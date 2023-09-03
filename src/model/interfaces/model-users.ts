@@ -2,6 +2,7 @@ import * as t from "io-ts";
 import { JsonFromString } from "io-ts-types";
 import { MembershipWorksUserType } from "../../membership-works/MembershipWorksTypes";
 import { DataValuesFromFromModel } from "../db/interfaces/persisted";
+import { ModelRole } from "./model-roles";
 
 export const ModelAccountUserDetails = DataValuesFromFromModel.pipe(
   t.strict({
@@ -18,6 +19,7 @@ const ModelLinkUserGroupDelegateInfoSchema1 = t.strict({
   infoSchemaVersion: t.literal(1),
   delegateForGroupId: t.string,
   delegateForGroupName: t.string,
+  delegateForRoles: t.array(ModelRole),
   delegateForEventId: t.number,
 });
 const ModelLinkUserGroupDelegateInfo = ModelLinkUserGroupDelegateInfoSchema1;

@@ -8,6 +8,7 @@ import {
   User,
 } from "../interfaces/users";
 import {
+  getAccountUserRoles,
   hasDelegatesReadAllPermission,
   hasDelegatesWriteAllMembersPermission,
   hasDelegatesWriteAllPermission,
@@ -130,6 +131,7 @@ export const createEventGroupDelegate =
                   infoSchemaVersion: 1,
                   delegateForGroupId: groupAccount.id,
                   delegateForGroupName: groupAccount.name,
+                  delegateForRoles: getAccountUserRoles(groupAccount),
                   delegateForEventId: event.id,
                 },
               },
