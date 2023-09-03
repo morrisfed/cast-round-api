@@ -137,7 +137,7 @@ motionVoteRouter.post<
             res.sendStatus(403);
           } else if (err === "not-found") {
             res.sendStatus(404);
-          } else if (err === "bad-request") {
+          } else if (err === "bad-request" || err === "invalid-submission") {
             res.sendStatus(400);
           } else if (err === "conflict") {
             res.sendStatus(409);

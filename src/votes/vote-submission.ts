@@ -6,8 +6,10 @@ import * as RONEA from "fp-ts/lib/ReadonlyNonEmptyArray";
 import * as ORD from "fp-ts/Ord";
 import * as EQ from "fp-ts/Eq";
 import * as STR from "fp-ts/string";
+import * as NUM from "fp-ts/number";
 import * as BOOL from "fp-ts/boolean";
 import * as SEMI from "fp-ts/Semigroup";
+import * as MONOID from "fp-ts/Monoid";
 
 import { Transaction } from "sequelize";
 
@@ -27,12 +29,15 @@ import {
   findAllMotionsVotesForOnBehalfUser,
 } from "../model/motion-votes";
 import { findEventGroupDelegateByLinkAndEvent } from "../model/event-group-delegates";
-import { findEventTellorByEventAndTellorUser } from "../model/event-tellors";
 import {
+  getRoles,
   hasVoteTotalsReadAllPermission,
   hasVoteTotalsReadOwnEventPermission,
 } from "../user/permissions";
 import { Motion } from "../interfaces/motions";
+import { findEventClerkByEventAndClerkUser } from "../model/event-clerks";
+import { findAccountUserWithDetailsById } from "../model/account-users";
+import { ModelRole } from "../model/interfaces/model-roles";
 
 export interface Vote {
   code: string;
@@ -184,7 +189,7 @@ const userCanSubmitVotesForMember =
   (user: LoggedInUser) =>
   (memberId: string) =>
   (motion: ModelMotion): TE.TaskEither<Error, boolean> => {
-    // If the current user is a member, they can only submit votes on their own behalf.
+    // If the current user is the member, they can only submit votes on their own behalf.
     if (user.source === "account") {
       return TE.right(user.id === memberId);
     }
@@ -201,12 +206,18 @@ const userCanSubmitVotesForMember =
       );
     }
 
-    // If the current user is a tellor, they can only submit votes for events they are linked to, but they can submit votes on behalf of any member.
-    return pipe(
-      findEventTellorByEventAndTellorUser(t)(motion.eventId)(user.id),
-      TE.map(() => true),
-      TE.orElse((e) => (e === "not-found" ? TE.right(false) : TE.left(e)))
-    );
+    if (user.link.type === "clerk") {
+      // If the current user is a voting clerk, they can only submit votes for events they are linked to,
+      // but they can submit votes on behalf of any member.
+      return pipe(
+        findEventClerkByEventAndClerkUser(t)(motion.eventId)(user.id),
+        TE.map(() => true),
+        TE.orElse((e) => (e === "not-found" ? TE.right(false) : TE.left(e)))
+      );
+    }
+
+    // No other users can submit votes on behalf of the member.
+    return TE.right(false);
   };
 
 const userCanReadVotesForMember =
@@ -238,6 +249,82 @@ const conflictIfMotionCannotAcceptVotes = (
   motionCanAcceptVotes(motion)
     ? E.right(undefined)
     : E.left("conflict" as const);
+
+const maxVotesForRole =
+  (voteDefinition: ModelMotion["voteDefinition"]) =>
+  (role: ModelRole): number =>
+    voteDefinition.roleVotes.find((roleVotes) => roleVotes.role === role)
+      ?.votes || 0;
+
+const monoidMaxVotes: MONOID.Monoid<number> = {
+  concat: Math.max,
+  empty: 0,
+};
+
+const maxVotesForRoles =
+  (voteDefinition: ModelMotion["voteDefinition"]) =>
+  (roles: readonly ModelRole[]) =>
+    ROA.foldMap(monoidMaxVotes)(maxVotesForRole(voteDefinition))(roles);
+
+const sumVotes = (votes: readonly Omit<Vote, "advanced">[]): number =>
+  ROA.foldMap(NUM.MonoidSum)((vote: Omit<Vote, "advanced">) => vote.count)(
+    votes
+  );
+
+const responseCodeValid =
+  (voteDefinition: ModelMotion["voteDefinition"]) =>
+  (responseCode: string): boolean =>
+    voteDefinition.responses.find(
+      (response) => response.code === responseCode
+    ) !== undefined;
+
+const voteCountsValidForVoteDefinition =
+  (votes: readonly Omit<Vote, "advanced">[]) =>
+  (voteDefinition: ModelMotion["voteDefinition"]) =>
+  (roles: ModelRole[]): boolean =>
+    sumVotes(votes) <= maxVotesForRoles(voteDefinition)(roles);
+
+const voteResponseCodesValidForVoteDefinition =
+  (votes: readonly Omit<Vote, "advanced">[]) =>
+  (voteDefinition: ModelMotion["voteDefinition"]) =>
+    ROA.every((vote: Omit<Vote, "advanced">) =>
+      responseCodeValid(voteDefinition)(vote.code)
+    )(votes);
+
+const votesValidForUserRolesAndVoteDefinition =
+  (votes: readonly Omit<Vote, "advanced">[]) =>
+  (voteDefinition: ModelMotion["voteDefinition"]) =>
+  (roles: ModelRole[]): boolean =>
+    voteCountsValidForVoteDefinition(votes)(voteDefinition)(roles) &&
+    voteResponseCodesValidForVoteDefinition(votes)(voteDefinition);
+
+const invalidIfVotesInvalidForUserRolesAndVoteDefinition =
+  (votes: readonly Omit<Vote, "advanced">[]) =>
+  (voteDefinition: ModelMotion["voteDefinition"]) =>
+  (roles: ModelRole[]): E.Either<"invalid-submission", void> => {
+    if (votesValidForUserRolesAndVoteDefinition(votes)(voteDefinition)(roles)) {
+      return E.right(undefined);
+    }
+
+    return E.left("invalid-submission" as const);
+  };
+
+const invalidIfFailsValidityCheck =
+  (t: Transaction) =>
+  (votes: readonly Omit<Vote, "advanced">[]) =>
+  (memberId: string) =>
+  (
+    motion: ModelMotion
+  ): TE.TaskEither<Error | "not-found" | "invalid-submission", unknown> =>
+    pipe(
+      findAccountUserWithDetailsById(t)(memberId),
+      TE.map(getRoles),
+      TE.chainEitherKW(
+        invalidIfVotesInvalidForUserRolesAndVoteDefinition(votes)(
+          motion.voteDefinition
+        )
+      )
+    );
 
 const forbiddenErrorIfUserCannotReadVotesForMember =
   (t: Transaction) =>
@@ -349,7 +436,7 @@ export const submitMotionVotes = (
   onBehalfOfUserId: string,
   votes: readonly Omit<Vote, "advanced">[]
 ): TE.TaskEither<
-  Error | "not-found" | "forbidden" | "conflict",
+  Error | "not-found" | "forbidden" | "conflict" | "invalid-submission",
   readonly ModelMotionVote[]
 > =>
   transactionalTaskEither((t) =>
@@ -359,6 +446,7 @@ export const submitMotionVotes = (
         forbiddenErrorIfUserCannotSubmitForMember(t)(user)(onBehalfOfUserId)
       ),
       TE.chainFirstEitherKW(conflictIfMotionCannotAcceptVotes),
+      TE.chainFirstW(invalidIfFailsValidityCheck(t)(votes)(onBehalfOfUserId)),
       TE.chainFirstW(clearPreviousVotes(t)(onBehalfOfUserId)),
       TE.map((motion) =>
         votesToBuildableMotionVotes(user)(onBehalfOfUserId)(
