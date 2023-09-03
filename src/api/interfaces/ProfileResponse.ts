@@ -10,6 +10,7 @@ export default interface ProfileResponse {
       delegateForGroupId: string;
       delegateForGroupName: string;
       delegateForEventId: number;
+      delegateForRoles: ModelRole[];
     };
     tellorInfo?: {
       tellorForEventId: number;

@@ -23,6 +23,8 @@ profileRouter.get<{}, ProfileResponse>("/", nocache(), (req, res) => {
                   req.user.loggedInUser.link.info.delegateForGroupName,
                 delegateForEventId:
                   req.user.loggedInUser.link.info.delegateForEventId,
+                delegateForRoles:
+                  req.user.loggedInUser.link.info.delegateForRoles,
               }
             : undefined,
         tellorInfo:
