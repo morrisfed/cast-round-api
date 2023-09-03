@@ -43,7 +43,7 @@ const initMotionModel = (sequelize: Sequelize) =>
         allowNull: false,
       },
       description: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(4000),
         allowNull: true,
       },
       status: {
