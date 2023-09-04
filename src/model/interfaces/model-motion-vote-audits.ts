@@ -30,6 +30,7 @@ export const ModelMotionVoteAudit = DataValuesFromFromModel.pipe(
     submittedAt: tt.date,
 
     replacedPreviousVotes: replacedVoteIdsFromString,
+    superseded: t.boolean,
   })
 );
 

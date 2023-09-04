@@ -4,7 +4,7 @@ import * as IOE from "fp-ts/lib/IOEither";
 import * as A from "fp-ts/lib/Array";
 import * as ROA from "fp-ts/lib/ReadonlyArray";
 
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { decodePersistedIOE } from "./_internal/utils";
 import { ModelMotionVoteAudit } from "./interfaces/model-motion-vote-audits";
 import { findPersistedMotionVoteAuditsByMotionId } from "./_internal/motion-vote-audit";
@@ -60,4 +60,25 @@ export const createMotionVoteAudits =
   ): TE.TaskEither<Error, readonly ModelMotionVoteAudit[]> =>
     ROA.traverse(TE.ApplicativePar)(createMotionVoteAudit(t))(
       buildableMotionVoteAudits
+    );
+
+export const supersedeMotionVoteAudits =
+  (t: Transaction) => (voteIds: number[]) =>
+    pipe(
+      TE.tryCatch(
+        () =>
+          PersistedMotionVoteAudit.update(
+            { superseded: true },
+            {
+              where: {
+                voteId: {
+                  [Op.in]: voteIds,
+                },
+              },
+              transaction: t,
+            }
+          ),
+        (reason) => new Error(String(reason))
+      ),
+      TE.map(([affectedRowsCount]) => affectedRowsCount)
     );

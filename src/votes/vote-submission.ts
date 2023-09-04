@@ -43,7 +43,10 @@ import { findAccountUserWithDetailsById } from "../model/account-users";
 import { ModelRole } from "../model/interfaces/model-roles";
 import { ModelMotionVoteAudit } from "../model/interfaces/model-motion-vote-audits";
 import { ModelAccountUserWithDetails } from "../model/interfaces/model-users";
-import { createMotionVoteAudits } from "../model/motion-vote-audits";
+import {
+  createMotionVoteAudits,
+  supersedeMotionVoteAudits,
+} from "../model/motion-vote-audits";
 
 export interface Vote {
   code: string;
@@ -474,6 +477,7 @@ const auditRecordForCreatedMotionVote =
     submittedByUserName: nameForSubmittingUser(submittingUser),
 
     replacedPreviousVotes: replacedVoteIds,
+    superseded: false,
 
     submittedAt,
   });
@@ -524,6 +528,9 @@ export const submitMotionVotes = (
       ),
       TE.bindW("replacedVoteIds", ({ motion }) =>
         clearPreviousVotes(t)(onBehalfOfUserId)(motion)
+      ),
+      TE.bindW("supersededCount", ({ replacedVoteIds }) =>
+        supersedeMotionVoteAudits(t)(replacedVoteIds)
       ),
       TE.bindW("buildableMotionVotes", ({ motion }) =>
         TE.of(

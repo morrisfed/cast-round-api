@@ -45,6 +45,8 @@ export class PersistedMotionVoteAudit
 
   declare replacedPreviousVotes: string;
 
+  declare superseded: boolean;
+
   declare submittedAt: Date;
 }
 
@@ -113,6 +115,10 @@ const initMotionVoteAuditModel = (sequelize: Sequelize) =>
 
       replacedPreviousVotes: {
         type: DataTypes.STRING,
+        allowNull: false,
+      },
+      superseded: {
+        type: DataTypes.BOOLEAN,
         allowNull: false,
       },
     },

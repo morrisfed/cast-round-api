@@ -17,6 +17,7 @@ export interface DbMotionVoteAudit {
   submittedByUserName: string;
 
   replacedPreviousVotes: string;
+  superseded: boolean;
 
   submittedAt: Date;
 }
